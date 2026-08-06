@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: healthos_postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: healthos
+      POSTGRES_USER: healthos
+      POSTGRES_PASSWORD: healthos
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - healthos_network
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: healthos_redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - healthos_network
+
+volumes:
+
+  postgres_data:
+
+  redis_data:
+
+networks:
+
+  healthos_network:
+    driver: bridge
