@@ -1,22 +1,20 @@
-import uuid
-
 from django.db import models
 
+from apps.common.mixins import (
+    UUIDMixin,
+    TimeStampedMixin,
+    SoftDeleteMixin,
+)
 
-class BaseModel(models.Model):
+
+class BaseModel(
+    UUIDMixin,
+    TimeStampedMixin,
+    SoftDeleteMixin,
+):
     """
-    Abstract base model for all HealthOS models.
-    Provides UUID primary key and timestamps.
+    Base model inherited by all HealthOS models.
     """
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
