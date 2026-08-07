@@ -32,14 +32,30 @@ ALLOWED_HOSTS = config(
 # Application definition
 
 INSTALLED_APPS = [
+    # Third Party
     "rest_framework",
     "corsheaders",
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+
+    # Django
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    # Local Apps
+    "apps.common",
+    "apps.accounts",
+    "apps.patients",
+    "apps.doctors",
+    "apps.hospitals",
+    "apps.appointments",
+    "apps.records",
+    "apps.emergency",
+    "apps.notifications",
+    "apps.analytics",
+    "apps.ai",
 ]
 
 MIDDLEWARE = [
