@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+# Emergency API views are located in apps.emergency.api.views.
