@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "apps.appointments",
     "apps.records",
     "apps.emergency",
+    "apps.clinical",
     "apps.notifications",
     "apps.analytics",
     "apps.ai",
