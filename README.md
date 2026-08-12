@@ -1,4 +1,4 @@
-# HealthOS
+# HealthO
 
 Healthcare Operating System
 
