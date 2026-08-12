@@ -1,10 +1,27 @@
+import uuid
 from django.conf import settings
 from django.db import models
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.common.models import BaseModel
 
 
 class Patient(BaseModel):
+    healthos_uid = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False,
+        db_index=True,
+    )
+
+    def generate_healthos_uid(self):
+        return f"HOS-{uuid.uuid4().hex[:8].upper()}"
+    
+    def save(self, *args, **kwargs):
+        if not self.healthos_uid:
+            self.healthos_uid = self.generate_healthos_uid()
+
+        super().save(*args, **kwargs)
+
     class Gender(models.TextChoices):
         MALE = "MALE", "Male"
         FEMALE = "FEMALE", "Female"
@@ -48,13 +65,20 @@ class Patient(BaseModel):
         decimal_places=2,
         null=True,
         blank=True,
+        validators=[
+            MinValueValidator(30),
+            MaxValueValidator(300),
+        ],
     )
-
     weight_kg = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(500),
+        ],
     )
 
     profile_photo = models.ImageField(

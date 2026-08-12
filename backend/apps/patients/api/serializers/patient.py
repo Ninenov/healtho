@@ -8,6 +8,7 @@ class PatientSerializer(serializers.ModelSerializer):
         model = Patient
         fields = (
             "id",
+            "healthos_uid",
             "date_of_birth",
             "gender",
             "blood_group",
