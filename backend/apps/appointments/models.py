@@ -19,6 +19,7 @@ class Appointment(BaseModel):
     class Status(models.TextChoices):
         SCHEDULED = "SCHEDULED", "Scheduled"
         CONFIRMED = "CONFIRMED", "Confirmed"
+        IN_PROGRESS = "IN_PROGRESS", "In Progress"
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
         NO_SHOW = "NO_SHOW", "No Show"
@@ -71,7 +72,11 @@ class Appointment(BaseModel):
                     }
                 )
 
-        if self.scheduled_at and self.scheduled_at <= timezone.now():
+        if (
+            self._state.adding
+            and self.scheduled_at
+            and self.scheduled_at <= timezone.now()
+        ):
             raise ValidationError(
                 {
                     "scheduled_at": (
@@ -80,6 +85,7 @@ class Appointment(BaseModel):
                 }
             )
 
+        
     def __str__(self):
         return (
             f"{self.patient.healthos_uid} - "

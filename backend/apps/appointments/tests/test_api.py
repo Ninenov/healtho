@@ -256,40 +256,40 @@ class AppointmentAPITestCase(APITestCase):
             status.HTTP_404_NOT_FOUND,
         )
 
-    def test_patient_can_delete_own_appointment(self):
-        self.client.force_authenticate(user=self.patient_user)
+    def test_patient_can_cancel_own_appointment(self):
+        self.client.force_authenticate(
+            user=self.patient.user,
+        )
 
-        response = self.client.delete(
-            self.detail_url(self.appointment.id),
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/cancel/"
         )
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_204_NO_CONTENT,
+            status.HTTP_200_OK,
         )
 
-        self.assertFalse(
-            Appointment.objects.filter(
-                id=self.appointment.id,
-            ).exists()
+        self.appointment.refresh_from_db()
+
+        self.assertEqual(
+            self.appointment.status,
+            Appointment.Status.CANCELLED,
         )
 
-    def test_patient_cannot_delete_another_patients_appointment(self):
-        self.client.force_authenticate(user=self.other_patient_user)
 
-        response = self.client.delete(
-            self.detail_url(self.appointment.id),
+    def test_patient_cannot_cancel_another_patients_appointment(self):
+        self.client.force_authenticate(
+            user=self.other_patient.user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/cancel/"
         )
 
         self.assertEqual(
             response.status_code,
             status.HTTP_404_NOT_FOUND,
-        )
-
-        self.assertTrue(
-            Appointment.objects.filter(
-                id=self.appointment.id,
-            ).exists()
         )
 
     def test_patient_cannot_change_appointment_status(self):
