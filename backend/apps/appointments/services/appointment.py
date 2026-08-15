@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.appointments.models import Appointment
-
+from apps.appointments.services.scheduling import SchedulingService
 
 class AppointmentService:
 
@@ -114,3 +114,34 @@ class AppointmentService:
         appointment.save(
             update_fields=["status", "updated_at"]
         )
+
+    @staticmethod
+    @transaction.atomic
+    def create(
+        *,
+        patient,
+        doctor,
+        appointment_type,
+        scheduled_at,
+        reason="",
+        notes="",
+    ):
+        appointment = Appointment(
+            patient=patient,
+            doctor=doctor,
+            appointment_type=appointment_type,
+            scheduled_at=scheduled_at,
+            reason=reason,
+            notes=notes,
+        )
+
+        appointment.full_clean()
+
+        SchedulingService.validate_slot(
+            doctor=doctor,
+            scheduled_at=scheduled_at,
+        )
+
+        appointment.save()
+
+        return appointment

@@ -78,10 +78,7 @@ class DoctorAvailabilityService:
         if is_active is not None:
             availability.is_active = is_active
 
-        if (
-            availability.start_time
-            >= availability.end_time
-        ):
+        if availability.start_time >= availability.end_time:
             raise ValidationError(
                 {
                     "end_time": (

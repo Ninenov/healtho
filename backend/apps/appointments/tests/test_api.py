@@ -1,6 +1,5 @@
-from datetime import timedelta
+from datetime import time, timedelta
 
-from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,7 +7,7 @@ from rest_framework.test import APITestCase
 from apps.accounts.constants.user_roles import UserRole
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.doctors.models import Doctor
+from apps.doctors.models import Doctor, DoctorAvailability
 from apps.patients.models import Patient
 
 
@@ -51,18 +50,44 @@ class AppointmentAPITestCase(APITestCase):
             license_number="DOC-API-001",
         )
 
+        self.appointment_date = self._next_weekday(0)
+
+        DoctorAvailability.objects.create(
+            doctor=self.doctor,
+            weekday=DoctorAvailability.Weekday.MONDAY,
+            start_time=time(9, 0),
+            end_time=time(17, 0),
+            is_active=True,
+        )
+
         self.appointment = Appointment.objects.create(
             patient=self.patient,
             doctor=self.doctor,
             appointment_type=Appointment.AppointmentType.CONSULTATION,
-            scheduled_at=timezone.now() + timedelta(days=1),
+            scheduled_at=timezone.make_aware(
+                timezone.datetime.combine(
+                    self.appointment_date,
+                    time(9, 0),
+                )
+            ),
             reason="Routine consultation",
         )
 
         self.list_url = "/api/v1/appointments/"
 
+    @staticmethod
+    def _next_weekday(weekday):
+        current = timezone.localdate()
+        days_ahead = (weekday - current.weekday()) % 7
+
+        if days_ahead == 0:
+            days_ahead = 7
+
+        return current + timedelta(days=days_ahead)
+
     def detail_url(self, appointment_id):
         return f"{self.list_url}{appointment_id}/"
+    
 
     def test_unauthenticated_user_cannot_list_appointments(self):
         response = self.client.get(self.list_url)
@@ -121,8 +146,14 @@ class AppointmentAPITestCase(APITestCase):
     def test_authenticated_user_can_create_appointment(self):
         self.client.force_authenticate(user=self.patient_user)
 
-        scheduled_at = timezone.now() + timedelta(days=3)
+        scheduled_at = timezone.make_aware(
+            timezone.datetime.combine(
+                self.appointment_date,
+                time(10, 0),
+            )
+        )
 
+        
         response = self.client.post(
             self.list_url,
             {
@@ -162,8 +193,11 @@ class AppointmentAPITestCase(APITestCase):
                 "patient": str(self.other_patient.id),
                 "doctor": str(self.doctor.id),
                 "appointment_type": "CONSULTATION",
-                "scheduled_at": (
-                    timezone.now() + timedelta(days=4)
+                "scheduled_at": timezone.make_aware(
+                    timezone.datetime.combine(
+                        self.appointment_date,
+                        time(11, 0),
+                    )
                 ).isoformat(),
             },
             format="json",
