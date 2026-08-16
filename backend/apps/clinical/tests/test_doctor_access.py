@@ -180,7 +180,7 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_doctor_with_scheduled_appointment_cannot_access_patient(self):
@@ -197,7 +197,7 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_doctor_with_cancelled_appointment_cannot_access_patient(self):
@@ -214,7 +214,7 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_other_doctor_cannot_access_patient(self):
@@ -231,7 +231,7 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_doctor_can_access_patient_with_valid_appointment(self):
@@ -373,7 +373,7 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         ) 
 
     def test_doctor_without_patient_relationship_cannot_read_records(self):
@@ -385,5 +385,5 @@ class DoctorPatientClinicalAPITestCase(TestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
-        )   
+            status.HTTP_404_NOT_FOUND,
+        )

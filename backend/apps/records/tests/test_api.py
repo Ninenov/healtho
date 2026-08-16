@@ -123,7 +123,10 @@ class MedicalRecordAPITestCase(APITestCase):
             f"/api/v1/records/{self.record_b.id}/"
         )
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
 
     def test_user_cannot_update_another_patients_record(self):
         self.client.force_authenticate(user=self.user_a)

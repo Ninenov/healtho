@@ -30,7 +30,7 @@ class DoctorPatientMedicalRecordsView(APIView):
 
         if patient is None:
             return Response(
-                {"detail": "Patient not found."},
+                {"detail": "You do not have access to this patient."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 

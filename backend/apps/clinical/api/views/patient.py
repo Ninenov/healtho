@@ -36,7 +36,7 @@ class DoctorPatientClinicalView(APIView):
 
         if patient is None:
             return Response(
-                {"detail": "Patient not found."},
+                {"detail": "You do not have access to this patient."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -46,7 +46,7 @@ class DoctorPatientClinicalView(APIView):
         ):
             return Response(
                 {"detail": "You do not have access to this patient."},
-                status=status.HTTP_403_FORBIDDEN,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         allergies = Allergy.objects.filter(
