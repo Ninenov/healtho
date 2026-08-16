@@ -159,3 +159,119 @@ class ClinicalEncounter(BaseModel):
             f"{self.doctor.user.phone} - "
             f"Clinical Encounter"
         )
+
+class Diagnosis(BaseModel):
+    class DiagnosisType(models.TextChoices):
+        PRIMARY = "PRIMARY", "Primary"
+        SECONDARY = "SECONDARY", "Secondary"
+
+    encounter = models.ForeignKey(
+        "clinical.ClinicalEncounter",
+        on_delete=models.CASCADE,
+        related_name="diagnoses",
+    )
+
+    diagnosis = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    diagnosis_type = models.CharField(
+        max_length=20,
+        choices=DiagnosisType.choices,
+        default=DiagnosisType.PRIMARY,
+    )
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.diagnosis} - {self.encounter}"
+
+    def clean(self):
+        if not self.encounter_id:
+            return
+
+        appointment = self.encounter.appointment
+
+        if appointment.status != Appointment.Status.IN_PROGRESS:
+            raise ValidationError(
+                "Diagnosis can only be added during an active consultation."
+            )
+
+class Prescription(BaseModel):
+    encounter = models.ForeignKey(
+        "clinical.ClinicalEncounter",
+        on_delete=models.CASCADE,
+        related_name="prescriptions",
+    )
+
+    medication = models.CharField(max_length=255)
+    dosage = models.CharField(max_length=100)
+    frequency = models.CharField(max_length=100)
+    duration = models.CharField(max_length=100)
+    route = models.CharField(max_length=100, blank=True)
+    instructions = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.medication} - {self.encounter}"
+
+    def clean(self):
+        if not self.encounter_id:
+            return
+
+        appointment = self.encounter.appointment
+
+        if appointment.status != appointment.Status.IN_PROGRESS:
+            raise ValidationError(
+                "Prescription can only be added during an active consultation."
+            )
+
+class FollowUpAction(BaseModel):
+    class ActionType(models.TextChoices):
+        FOLLOW_UP = "FOLLOW_UP", "Follow Up"
+        LAB_TEST = "LAB_TEST", "Lab Test"
+        REFERRAL = "REFERRAL", "Referral"
+        PROCEDURE = "PROCEDURE", "Procedure"
+        OTHER = "OTHER", "Other"
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        COMPLETED = "COMPLETED", "Completed"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    encounter = models.ForeignKey(
+        "clinical.ClinicalEncounter",
+        on_delete=models.CASCADE,
+        related_name="follow_up_actions",
+    )
+
+    action_type = models.CharField(
+        max_length=20,
+        choices=ActionType.choices,
+        default=ActionType.FOLLOW_UP,
+    )
+
+    description = models.TextField()
+
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.action_type} - {self.encounter}"
+
+    def clean(self):
+        if not self.encounter_id:
+            return
+
+        appointment = self.encounter.appointment
+
+        if appointment.status != appointment.Status.IN_PROGRESS:
+            raise ValidationError(
+                "Follow-up action can only be added during an active consultation."
+            )

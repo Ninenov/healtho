@@ -15,6 +15,13 @@ from apps.clinical.api.views.records import (
 from apps.clinical.api.views.encounters import (
     ClinicalEncounterView,
 )
+from apps.clinical.api.views.diagnoses import DiagnosisListCreateView
+from apps.clinical.api.views.prescriptions import (
+    PrescriptionListCreateView,
+)
+from apps.clinical.api.views.follow_ups import (
+    FollowUpActionListCreateView,
+)
 
 urlpatterns = [
     path(
@@ -51,5 +58,20 @@ urlpatterns = [
         "appointments/<uuid:appointment_id>/encounter/",
         ClinicalEncounterView.as_view(),
         name="clinical-encounter",
+    ),
+    path(
+        "encounters/<uuid:encounter_id>/diagnoses/",
+        DiagnosisListCreateView.as_view(),
+        name="encounter-diagnoses",
+    ),
+    path(
+        "encounters/<uuid:encounter_id>/prescriptions/",
+        PrescriptionListCreateView.as_view(),
+        name="encounter-prescriptions",
+    ),
+    path(
+        "encounters/<uuid:encounter_id>/follow-ups/",
+        FollowUpActionListCreateView.as_view(),
+        name="encounter-follow-ups",
     ),
 ]
