@@ -12,6 +12,9 @@ from .views.patient import DoctorPatientClinicalView
 from apps.clinical.api.views.records import (
     AppointmentClinicalRecordCreateView,
 )
+from apps.clinical.api.views.encounters import (
+    ClinicalEncounterView,
+)
 
 urlpatterns = [
     path(
@@ -43,5 +46,10 @@ urlpatterns = [
         "appointments/<uuid:appointment_id>/records/",
         AppointmentClinicalRecordCreateView.as_view(),
         name="appointment-clinical-record-create",
+    ),
+    path(
+        "appointments/<uuid:appointment_id>/encounter/",
+        ClinicalEncounterView.as_view(),
+        name="clinical-encounter",
     ),
 ]

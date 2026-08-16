@@ -1,8 +1,10 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.appointments.models import Appointment
 from apps.common.models import BaseModel
+from apps.doctors.models import Doctor
 from apps.patients.models import Patient
-
 
 class Allergy(BaseModel):
     class Severity(models.TextChoices):
@@ -82,3 +84,78 @@ class MedicalCondition(BaseModel):
 
     def __str__(self):
         return f"{self.name} - {self.patient.healthos_uid}"
+
+class ClinicalEncounter(BaseModel):
+
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name="clinical_encounter",
+    )
+
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="clinical_encounters",
+    )
+
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.PROTECT,
+        related_name="clinical_encounters",
+    )
+
+    chief_complaint = models.TextField(
+        blank=True,
+    )
+
+    symptoms = models.TextField(
+        blank=True,
+    )
+
+    examination_findings = models.TextField(
+        blank=True,
+    )
+
+    assessment = models.TextField(
+        blank=True,
+    )
+
+    plan = models.TextField(
+        blank=True,
+    )
+
+    notes = models.TextField(
+        blank=True,
+    )
+
+    def clean(self):
+        super().clean()
+
+        if self.appointment_id:
+            if self.patient_id != self.appointment.patient_id:
+                raise ValidationError(
+                    {
+                        "patient": (
+                            "Encounter patient must match "
+                            "appointment patient."
+                        )
+                    }
+                )
+
+            if self.doctor_id != self.appointment.doctor_id:
+                raise ValidationError(
+                    {
+                        "doctor": (
+                            "Encounter doctor must match "
+                            "appointment doctor."
+                        )
+                    }
+                )
+
+    def __str__(self):
+        return (
+            f"{self.patient.healthos_uid} - "
+            f"{self.doctor.user.phone} - "
+            f"Clinical Encounter"
+        )
