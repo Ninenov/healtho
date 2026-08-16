@@ -8,7 +8,10 @@ from .views.conditions import (
     MedicalConditionDetailAPIView,
     MedicalConditionListCreateAPIView,
 )
-
+from .views.patient import DoctorPatientClinicalView
+from apps.clinical.api.views.records import (
+    AppointmentClinicalRecordCreateView,
+)
 
 urlpatterns = [
     path(
@@ -30,5 +33,15 @@ urlpatterns = [
         "conditions/<uuid:pk>/",
         MedicalConditionDetailAPIView.as_view(),
         name="medical-condition-detail",
+    ),
+    path(
+        "patients/<uuid:patient_id>/",
+        DoctorPatientClinicalView.as_view(),
+        name="doctor-patient-clinical",
+    ),
+    path(
+        "appointments/<uuid:appointment_id>/records/",
+        AppointmentClinicalRecordCreateView.as_view(),
+        name="appointment-clinical-record-create",
     ),
 ]
