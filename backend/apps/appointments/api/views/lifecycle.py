@@ -51,3 +51,173 @@ class AppointmentCancelView(APIView):
             AppointmentSerializer(appointment).data,
             status=status.HTTP_200_OK,
         )
+
+class AppointmentConfirmView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            doctor = request.user.doctor_profile
+        except AttributeError:
+            return Response(
+                {"detail": "Doctor profile not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        appointment = (
+            Appointment.objects
+            .filter(
+                id=appointment_id,
+                doctor=doctor,
+            )
+            .first()
+        )
+
+        if appointment is None:
+            return Response(
+                {"detail": "Appointment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            appointment = AppointmentService.confirm(
+                appointment=appointment,
+            )
+        except ValidationError as exc:
+            return Response(
+                exc.message_dict,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            AppointmentSerializer(appointment).data,
+            status=status.HTTP_200_OK,
+        )
+
+class AppointmentStartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            doctor = request.user.doctor_profile
+        except AttributeError:
+            return Response(
+                {"detail": "Doctor profile not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        appointment = (
+            Appointment.objects
+            .filter(
+                id=appointment_id,
+                doctor=doctor,
+            )
+            .first()
+        )
+
+        if appointment is None:
+            return Response(
+                {"detail": "Appointment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            appointment = AppointmentService.start(
+                appointment=appointment,
+            )
+        except ValidationError as exc:
+            return Response(
+                exc.message_dict,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            AppointmentSerializer(appointment).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class AppointmentCompleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            doctor = request.user.doctor_profile
+        except AttributeError:
+            return Response(
+                {"detail": "Doctor profile not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        appointment = (
+            Appointment.objects
+            .filter(
+                id=appointment_id,
+                doctor=doctor,
+            )
+            .first()
+        )
+
+        if appointment is None:
+            return Response(
+                {"detail": "Appointment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            appointment = AppointmentService.complete(
+                appointment=appointment,
+            )
+        except ValidationError as exc:
+            return Response(
+                exc.message_dict,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            AppointmentSerializer(appointment).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class AppointmentNoShowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_id):
+        try:
+            doctor = request.user.doctor_profile
+        except AttributeError:
+            return Response(
+                {"detail": "Doctor profile not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        appointment = (
+            Appointment.objects
+            .filter(
+                id=appointment_id,
+                doctor=doctor,
+            )
+            .first()
+        )
+
+        if appointment is None:
+            return Response(
+                {"detail": "Appointment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            appointment = AppointmentService.no_show(
+                appointment=appointment,
+            )
+        except ValidationError as exc:
+            return Response(
+                exc.message_dict,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            AppointmentSerializer(appointment).data,
+            status=status.HTTP_200_OK,
+        )

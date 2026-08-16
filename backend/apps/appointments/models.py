@@ -84,7 +84,6 @@ class Appointment(BaseModel):
                     ),
                 }
             )
-
         
     def __str__(self):
         return (

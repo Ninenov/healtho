@@ -348,3 +348,97 @@ class AppointmentAPITestCase(APITestCase):
             self.appointment.status,
             Appointment.Status.SCHEDULED,
         )
+
+        def test_doctor_can_confirm_appointment(self):
+            self.client.force_authenticate(
+                user=self.doctor_user,
+            )
+
+            response = self.client.post(
+                f"/api/v1/appointments/{self.appointment.id}/confirm/"
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_200_OK,
+            )
+
+            self.appointment.refresh_from_db()
+
+            self.assertEqual(
+                self.appointment.status,
+                Appointment.Status.CONFIRMED,
+            )
+
+    def test_patient_cannot_confirm_appointment(self):
+        self.client.force_authenticate(
+            user=self.patient_user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/confirm/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_doctor_cannot_confirm_another_doctors_appointment(self):
+        other_doctor_user = User.objects.create_user(
+            phone="9000000004",
+            first_name="Other",
+            last_name="Doctor",
+            role=UserRole.DOCTOR,
+        )
+
+        other_doctor = Doctor.objects.create(
+            user=other_doctor_user,
+            specialization="Neurology",
+            qualification="MBBS, MD",
+            license_number="DOC-API-002",
+        )
+
+        other_appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=other_doctor,
+            appointment_type=Appointment.AppointmentType.CONSULTATION,
+            scheduled_at=timezone.make_aware(
+                timezone.datetime.combine(
+                    self.appointment_date,
+                    time(13, 0),
+                )
+            ),
+        )
+
+        self.client.force_authenticate(
+            user=self.doctor_user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/appointments/{other_appointment.id}/confirm/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_confirming_already_confirmed_appointment_fails(self):
+        self.appointment.status = Appointment.Status.CONFIRMED
+        self.appointment.save(
+            update_fields=["status"],
+        )
+
+        self.client.force_authenticate(
+            user=self.doctor_user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/confirm/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
