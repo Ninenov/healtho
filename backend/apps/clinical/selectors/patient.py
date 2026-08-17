@@ -1,6 +1,6 @@
 from apps.appointments.models import Appointment
+from apps.appointments.models import Appointment
 from apps.patients.models import Patient
-
 
 def get_patient_clinical_context(*, doctor, appointment_id):
     appointment = (
