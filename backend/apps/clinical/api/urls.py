@@ -25,7 +25,9 @@ from apps.clinical.api.views.follow_ups import (
 from apps.clinical.api.views.history import PatientClinicalHistoryView
 from apps.clinical.api.views.context import PatientClinicalContextView
 from apps.clinical.api.views.context import PatientClinicalContextView
-
+from apps.clinical.api.views.encounter_completion import (
+    ClinicalEncounterCompleteView,
+)
 
 urlpatterns = [
     path(
@@ -87,5 +89,10 @@ urlpatterns = [
         "patients/<uuid:patient_id>/context/",
         PatientClinicalContextView.as_view(),
         name="patient-clinical-context",
+    ),
+    path(
+        "encounters/<uuid:encounter_id>/complete/",
+        ClinicalEncounterCompleteView.as_view(),
+        name="clinical-encounter-complete",
     ),
 ]

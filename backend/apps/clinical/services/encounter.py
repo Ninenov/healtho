@@ -68,3 +68,37 @@ class ClinicalEncounterService:
         encounter.save()
 
         return encounter
+
+    @staticmethod
+    @transaction.atomic
+    def complete(
+        *,
+        encounter,
+        doctor,
+    ):
+        if encounter.doctor_id != doctor.id:
+            raise ValidationError(
+                {
+                    "doctor": (
+                        "You can only complete "
+                        "your own clinical encounter."
+                    )
+                }
+            )
+
+        appointment = encounter.appointment
+
+        if appointment.status != Appointment.Status.IN_PROGRESS:
+            raise ValidationError(
+                {
+                    "appointment": (
+                        "Only an active consultation "
+                        "can be completed."
+                    )
+                }
+            )
+
+        appointment.status = Appointment.Status.COMPLETED
+        appointment.save(update_fields=["status", "updated_at"])
+
+        return encounter
