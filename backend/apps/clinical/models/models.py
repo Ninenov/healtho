@@ -160,6 +160,75 @@ class ClinicalEncounter(BaseModel):
             f"Clinical Encounter"
         )
 
+class ClinicalAuditEvent(models.Model):
+
+    class Action(models.TextChoices):
+        ENCOUNTER_CREATED = (
+            "ENCOUNTER_CREATED",
+            "Encounter Created",
+        )
+        DIAGNOSIS_CREATED = (
+            "DIAGNOSIS_CREATED",
+            "Diagnosis Created",
+        )
+        PRESCRIPTION_CREATED = (
+            "PRESCRIPTION_CREATED",
+            "Prescription Created",
+        )
+        FOLLOW_UP_CREATED = (
+            "FOLLOW_UP_CREATED",
+            "Follow Up Created",
+        )
+        ENCOUNTER_COMPLETED = (
+            "ENCOUNTER_COMPLETED",
+            "Encounter Completed",
+        )
+
+    actor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.PROTECT,
+        related_name="clinical_audit_events",
+    )
+
+    encounter = models.ForeignKey(
+        ClinicalEncounter,
+        on_delete=models.PROTECT,
+        related_name="audit_events",
+    )
+
+    action = models.CharField(
+        max_length=50,
+        choices=Action.choices,
+    )
+
+    target_type = models.CharField(
+        max_length=100,
+    )
+
+    target_id = models.CharField(
+        max_length=100,
+    )
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        db_table = "clinical_audit_events"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"{self.action} - "
+            f"Encounter {self.encounter_id} - "
+            f"Actor {self.actor_id}"
+        )
+
 class Diagnosis(BaseModel):
     class DiagnosisType(models.TextChoices):
         PRIMARY = "PRIMARY", "Primary"

@@ -7,7 +7,10 @@ from rest_framework.test import APITestCase
 from apps.accounts.constants.user_roles import UserRole
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.clinical.models import ClinicalEncounter
+from apps.clinical.models.models import (
+    ClinicalAuditEvent,
+    ClinicalEncounter,
+)
 from apps.doctors.models import Doctor
 from apps.patients.models import Patient
 
@@ -96,6 +99,31 @@ class ClinicalEncounterCompletionAPITestCase(APITestCase):
             Appointment.Status.COMPLETED,
         )
 
+        audit_event = ClinicalAuditEvent.objects.get(
+            encounter=self.encounter,
+            action=ClinicalAuditEvent.Action.ENCOUNTER_COMPLETED,
+        )
+
+        self.assertEqual(
+            audit_event.actor,
+            self.doctor.user,
+        )
+
+        self.assertEqual(
+            audit_event.target_type,
+            "ClinicalEncounter",
+        )
+
+        self.assertEqual(
+            str(audit_event.target_id),
+            str(self.encounter.id),
+        )
+
+        self.assertEqual(
+            str(audit_event.metadata["appointment_id"]),
+            str(self.appointment.id),
+        )
+
     def test_completed_encounter_is_still_retrievable(self):
         self.client.force_authenticate(
             user=self.doctor_user,
@@ -141,7 +169,9 @@ class ClinicalEncounterCompletionAPITestCase(APITestCase):
 
     def test_completed_appointment_cannot_be_completed_again(self):
         self.appointment.status = Appointment.Status.COMPLETED
-        self.appointment.save(update_fields=["status"])
+        self.appointment.save(
+            update_fields=["status"],
+        )
 
         self.client.force_authenticate(
             user=self.doctor_user,
@@ -156,7 +186,9 @@ class ClinicalEncounterCompletionAPITestCase(APITestCase):
 
     def test_scheduled_appointment_cannot_be_completed(self):
         self.appointment.status = Appointment.Status.SCHEDULED
-        self.appointment.save(update_fields=["status"])
+        self.appointment.save(
+            update_fields=["status"],
+        )
 
         self.client.force_authenticate(
             user=self.doctor_user,
@@ -171,7 +203,9 @@ class ClinicalEncounterCompletionAPITestCase(APITestCase):
 
     def test_confirmed_appointment_cannot_be_completed(self):
         self.appointment.status = Appointment.Status.CONFIRMED
-        self.appointment.save(update_fields=["status"])
+        self.appointment.save(
+            update_fields=["status"],
+        )
 
         self.client.force_authenticate(
             user=self.doctor_user,

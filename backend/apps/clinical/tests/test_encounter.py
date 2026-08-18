@@ -7,7 +7,7 @@ from django.utils import timezone
 from apps.accounts.constants.user_roles import UserRole
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.clinical.models import ClinicalEncounter
+from apps.clinical.models.models import ClinicalEncounter
 from apps.clinical.services.encounter import ClinicalEncounterService
 from apps.doctors.models import Doctor
 from apps.patients.models import Patient

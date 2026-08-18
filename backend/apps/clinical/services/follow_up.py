@@ -1,21 +1,43 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
-from apps.clinical.models import ClinicalEncounter, FollowUpAction
+from apps.clinical.models.models import (
+    ClinicalAuditEvent,
+    ClinicalEncounter,
+    FollowUpAction,
+)
+from apps.clinical.services.audit import ClinicalAuditService
 
 
+@transaction.atomic
 def create_follow_up_action(
     *,
     encounter: ClinicalEncounter,
+    doctor,
     action_type: str,
     description: str,
     due_date=None,
     notes: str = "",
 ) -> FollowUpAction:
     if not encounter:
-        raise ValidationError("Clinical encounter is required.")
+        raise ValidationError(
+            "Clinical encounter is required."
+        )
+
+    if not doctor:
+        raise ValidationError(
+            "Doctor is required."
+        )
+
+    if encounter.doctor_id != doctor.id:
+        raise ValidationError(
+            "You can only add a follow-up to your own encounter."
+        )
 
     if not description:
-        raise ValidationError("Follow-up description is required.")
+        raise ValidationError(
+            "Follow-up description is required."
+        )
 
     appointment = encounter.appointment
 
@@ -24,10 +46,24 @@ def create_follow_up_action(
             "Follow-up action can only be added during an active consultation."
         )
 
-    return FollowUpAction.objects.create(
+    action = FollowUpAction.objects.create(
         encounter=encounter,
         action_type=action_type,
         description=description,
         due_date=due_date,
         notes=notes,
     )
+
+    ClinicalAuditService.log(
+        actor=doctor.user,
+        encounter=encounter,
+        action=ClinicalAuditEvent.Action.FOLLOW_UP_CREATED,
+        target_type="FollowUpAction",
+        target_id=action.id,
+        metadata={
+            "action_type": action_type,
+            "due_date": str(due_date) if due_date else None,
+        },
+    )
+
+    return action

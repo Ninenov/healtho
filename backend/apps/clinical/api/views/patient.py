@@ -7,7 +7,7 @@ from apps.clinical.api.serializers import (
     AllergySerializer,
     MedicalConditionSerializer,
 )
-from apps.clinical.models import Allergy, MedicalCondition
+from apps.clinical.models.models import Allergy, MedicalCondition
 from apps.clinical.selectors.access import (
     doctor_has_patient_access,
 )

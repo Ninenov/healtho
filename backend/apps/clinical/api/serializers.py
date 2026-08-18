@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.clinical.models import (
+from apps.clinical.models.models import (
     Allergy,
     ClinicalEncounter,
     Diagnosis,

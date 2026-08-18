@@ -10,7 +10,7 @@ from apps.records.models import MedicalRecord
 from apps.accounts.constants.user_roles import UserRole
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.clinical.models import Allergy, MedicalCondition
+from apps.clinical.models.models import Allergy, MedicalCondition
 from apps.doctors.models import Doctor
 from apps.patients.models import Patient
 
@@ -387,3 +387,4 @@ class DoctorPatientClinicalAPITestCase(TestCase):
             response.status_code,
             status.HTTP_404_NOT_FOUND,
         )
+

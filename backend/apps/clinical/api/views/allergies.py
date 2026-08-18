@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 
 from apps.clinical.api.serializers import AllergySerializer
-from apps.clinical.models import Allergy
+from apps.clinical.models.models import Allergy
 from apps.patients.selectors.patient import get_patient_by_user
 
 

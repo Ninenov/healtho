@@ -2,8 +2,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.appointments.models import Appointment
-from apps.clinical.models import ClinicalEncounter
-
+from apps.clinical.models.models import (
+    ClinicalAuditEvent,
+    ClinicalEncounter,
+)
+from apps.clinical.services.audit import ClinicalAuditService
 
 class ClinicalEncounterService:
 
@@ -67,6 +70,17 @@ class ClinicalEncounterService:
         encounter.full_clean()
         encounter.save()
 
+        ClinicalAuditService.log(
+            actor=doctor.user,
+            encounter=encounter,
+            action=ClinicalAuditEvent.Action.ENCOUNTER_CREATED,
+            target_type="ClinicalEncounter",
+            target_id=encounter.id,
+            metadata={
+                "appointment_id": str(appointment.id),
+            },
+        )
+
         return encounter
 
     @staticmethod
@@ -100,5 +114,49 @@ class ClinicalEncounterService:
 
         appointment.status = Appointment.Status.COMPLETED
         appointment.save(update_fields=["status", "updated_at"])
+
+        return encounter
+
+    @staticmethod
+    @transaction.atomic
+    def complete(
+        *,
+        encounter,
+        doctor,
+    ):
+        if encounter.doctor_id != doctor.id:
+            raise ValidationError(
+                {
+                    "doctor": (
+                        "You can only complete your own clinical encounter."
+                    )
+                }
+            )
+
+        appointment = encounter.appointment
+
+        if appointment.status != Appointment.Status.IN_PROGRESS:
+            raise ValidationError(
+                {
+                    "appointment": (
+                        "Only an active consultation "
+                        "can be completed."
+                    )
+                }
+            )
+
+        appointment.status = Appointment.Status.COMPLETED
+        appointment.save(update_fields=["status", "updated_at"])
+
+        ClinicalAuditService.log(
+            actor=doctor.user,
+            encounter=encounter,
+            action=ClinicalAuditEvent.Action.ENCOUNTER_COMPLETED,
+            target_type="ClinicalEncounter",
+            target_id=encounter.id,
+            metadata={
+                "appointment_id": str(appointment.id),
+            },
+        )
 
         return encounter

@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment
 from apps.clinical.api.serializers import ClinicalEncounterSerializer
-from apps.clinical.models import ClinicalEncounter
+from apps.clinical.models.models import ClinicalEncounter
 from apps.clinical.services.encounter import ClinicalEncounterService
 
 

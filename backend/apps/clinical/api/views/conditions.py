@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 
 from apps.clinical.api.serializers import MedicalConditionSerializer
-from apps.clinical.models import MedicalCondition
+from apps.clinical.models.models import MedicalCondition
 from apps.patients.selectors.patient import get_patient_by_user
 
 

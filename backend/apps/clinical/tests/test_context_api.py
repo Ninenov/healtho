@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 from apps.accounts.constants.user_roles import UserRole
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.clinical.models import (
+from apps.clinical.models.models import (
     Allergy,
     ClinicalEncounter,
     Diagnosis,

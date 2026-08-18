@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Allergy, MedicalCondition
+from .models.models import Allergy, MedicalCondition
 
 
 @admin.register(Allergy)

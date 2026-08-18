@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.clinical.models import ClinicalEncounter, FollowUpAction
+from apps.clinical.models.models import ClinicalEncounter, FollowUpAction
 from apps.clinical.services.follow_up import create_follow_up_action
 
 
@@ -70,6 +70,7 @@ class FollowUpActionListCreateView(APIView):
         try:
             action = create_follow_up_action(
                 encounter=encounter,
+                doctor=encounter.doctor,
                 action_type=request.data.get(
                     "action_type",
                     FollowUpAction.ActionType.FOLLOW_UP,

@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.clinical.models import ClinicalEncounter, Prescription
+from apps.clinical.models.models import ClinicalEncounter, Prescription
 from apps.clinical.services.prescription import create_prescription
 
 
@@ -87,6 +87,7 @@ class PrescriptionListCreateView(APIView):
         try:
             prescription = create_prescription(
                 encounter=encounter,
+                doctor=encounter.doctor,
                 medication=request.data["medication"],
                 dosage=request.data["dosage"],
                 frequency=request.data["frequency"],

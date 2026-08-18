@@ -1,4 +1,4 @@
-from apps.clinical.models import ClinicalEncounter
+from apps.clinical.models.models import ClinicalEncounter
 from apps.clinical.selectors.access import doctor_has_patient_access
 
 

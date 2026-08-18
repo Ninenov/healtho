@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.clinical.models import ClinicalEncounter, Diagnosis
+from apps.clinical.models.models import ClinicalEncounter, Diagnosis
 from apps.clinical.services.diagnosis import create_diagnosis
 
 
@@ -71,6 +71,7 @@ class DiagnosisListCreateView(APIView):
         try:
             diagnosis_obj = create_diagnosis(
                 encounter=encounter,
+                doctor=encounter.doctor,
                 diagnosis=diagnosis,
                 description=request.data.get("description", ""),
                 diagnosis_type=request.data.get(

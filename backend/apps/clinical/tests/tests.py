@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
-from apps.clinical.models import Allergy, MedicalCondition
+from apps.clinical.models.models import Allergy, MedicalCondition
 from apps.patients.models import Patient
 
 
