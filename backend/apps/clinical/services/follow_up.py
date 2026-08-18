@@ -7,6 +7,8 @@ from apps.clinical.models.models import (
     FollowUpAction,
 )
 from apps.clinical.services.audit import ClinicalAuditService
+from apps.notifications.models import Notification
+from apps.notifications.services import create_notification
 
 
 @transaction.atomic
@@ -62,6 +64,20 @@ def create_follow_up_action(
         target_id=action.id,
         metadata={
             "action_type": action_type,
+            "due_date": str(due_date) if due_date else None,
+        },
+    )
+
+    create_notification(
+        recipient=encounter.patient.user,
+        notification_type=Notification.NotificationType.FOLLOW_UP,
+        title="New Follow-Up Plan",
+        message=description,
+        target_type="FollowUpAction",
+        target_id=action.id,
+        metadata={
+            "encounter_id": str(encounter.id),
+            "doctor_id": str(doctor.id),
             "due_date": str(due_date) if due_date else None,
         },
     )
