@@ -8,4 +8,8 @@ urlpatterns = [
     path("clinical/", include("apps.clinical.api.urls")),
     path("records/", include("apps.records.api.urls")),
     path("appointments/", include("apps.appointments.api.urls")),
+    path(
+    "notifications/",
+    include("apps.notifications.api.urls"),
+),
 ]
