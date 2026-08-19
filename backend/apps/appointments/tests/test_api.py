@@ -9,7 +9,7 @@ from apps.accounts.models import User
 from apps.appointments.models import Appointment
 from apps.doctors.models import Doctor, DoctorAvailability
 from apps.patients.models import Patient
-
+from apps.notifications.models import Notification
 
 class AppointmentAPITestCase(APITestCase):
 
@@ -441,4 +441,128 @@ class AppointmentAPITestCase(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_authenticated_user_can_create_appointment(self):
+        self.client.force_authenticate(user=self.patient_user)
+
+        scheduled_at = timezone.make_aware(
+            timezone.datetime.combine(
+                self.appointment_date,
+                time(10, 0),
+            )
+        )
+
+        response = self.client.post(
+            self.list_url,
+            {
+                "doctor": str(self.doctor.id),
+                "appointment_type": "FOLLOW_UP",
+                "scheduled_at": scheduled_at.isoformat(),
+                "reason": "Follow-up consultation",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        appointment = Appointment.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            appointment.patient,
+            self.patient,
+        )
+
+        self.assertEqual(
+            appointment.doctor,
+            self.doctor,
+        )
+
+        notifications = Notification.objects.filter(
+            recipient=self.patient_user,
+            target_type="Appointment",
+            target_id=str(appointment.id),
+        )
+
+        self.assertEqual(
+            notifications.count(),
+            1,
+        )
+
+        notification = notifications.first()
+
+        self.assertEqual(
+            notification.notification_type,
+            Notification.NotificationType.APPOINTMENT,
+        )
+
+        self.assertEqual(
+            notification.title,
+            "Appointment Scheduled",
+        )
+
+        self.assertEqual(
+            notification.target_id,
+            str(appointment.id),
+        )
+
+        self.assertEqual(
+            notification.metadata["doctor_id"],
+            str(self.doctor.id),
+        )
+
+        self.assertEqual(
+            notification.metadata["appointment_type"],
+            "FOLLOW_UP",
+        )
+
+    def test_appointment_notification_is_sent_only_to_appointment_patient(self):
+        self.client.force_authenticate(user=self.patient_user)
+
+        scheduled_at = timezone.make_aware(
+            timezone.datetime.combine(
+                self.appointment_date,
+                time(14, 0),
+            )
+        )
+
+        response = self.client.post(
+            self.list_url,
+            {
+                "doctor": str(self.doctor.id),
+                "appointment_type": "CONSULTATION",
+                "scheduled_at": scheduled_at.isoformat(),
+                "reason": "Security test",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        appointment_id = response.data["id"]
+
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=self.patient_user,
+                target_type="Appointment",
+                target_id=str(appointment_id),
+            ).count(),
+            1,
+        )
+
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=self.other_patient_user,
+                target_type="Appointment",
+                target_id=str(appointment_id),
+            ).count(),
+            0,
         )

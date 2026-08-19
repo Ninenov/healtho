@@ -2,6 +2,7 @@ from apps.clinical.events.follow_up import FollowUpCreated
 from apps.notifications.models import Notification
 from apps.notifications.services import create_notification
 from apps.clinical.events.encounter import EncounterCompleted
+from apps.appointments.events.appointment import AppointmentCreated
 
 def handle_follow_up_created(event: FollowUpCreated) -> None:
     """
@@ -42,5 +43,28 @@ def handle_encounter_completed(event: EncounterCompleted) -> None:
         metadata={
             "doctor_id": str(event.doctor_id),
             "appointment_id": str(event.appointment_id),
+        },
+    )
+
+def handle_appointment_created(event: AppointmentCreated) -> None:
+    """
+    Create a patient notification when an appointment is created.
+    """
+
+    create_notification(
+        recipient=event.patient_user,
+        notification_type=Notification.NotificationType.APPOINTMENT,
+        title="Appointment Scheduled",
+        message="Your appointment has been scheduled.",
+        target_type="Appointment",
+        target_id=event.appointment_id,
+        metadata={
+            "doctor_id": str(event.doctor_id),
+            "scheduled_at": (
+                event.scheduled_at.isoformat()
+                if event.scheduled_at
+                else None
+            ),
+            "appointment_type": event.appointment_type,
         },
     )

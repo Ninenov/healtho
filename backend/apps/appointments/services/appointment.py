@@ -3,6 +3,9 @@ from django.db import transaction
 
 from apps.appointments.models import Appointment
 from apps.appointments.services.scheduling import SchedulingService
+from apps.appointments.events.appointment import AppointmentCreated
+from apps.common.events.registry import event_registry
+
 
 class AppointmentService:
 
@@ -34,6 +37,17 @@ class AppointmentService:
         )
 
         appointment.save()
+
+        event = AppointmentCreated(
+            appointment_id=appointment.id,
+            patient_id=appointment.patient_id,
+            patient_user=appointment.patient.user,
+            doctor_id=appointment.doctor_id,
+            scheduled_at=appointment.scheduled_at,
+            appointment_type=appointment.appointment_type,
+        )
+
+        event_registry.dispatch(event)
 
         return appointment
 
