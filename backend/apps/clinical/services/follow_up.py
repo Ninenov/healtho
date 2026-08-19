@@ -1,14 +1,14 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from apps.clinical.events.follow_up import FollowUpCreated
 from apps.clinical.models.models import (
     ClinicalAuditEvent,
     ClinicalEncounter,
     FollowUpAction,
 )
 from apps.clinical.services.audit import ClinicalAuditService
-from apps.notifications.models import Notification
-from apps.notifications.services import create_notification
+from apps.common.events.registry import event_registry
 
 
 @transaction.atomic
@@ -68,18 +68,17 @@ def create_follow_up_action(
         },
     )
 
-    create_notification(
-        recipient=encounter.patient.user,
-        notification_type=Notification.NotificationType.FOLLOW_UP,
-        title="New Follow-Up Plan",
-        message=description,
-        target_type="FollowUpAction",
-        target_id=action.id,
-        metadata={
-            "encounter_id": str(encounter.id),
-            "doctor_id": str(doctor.id),
-            "due_date": str(due_date) if due_date else None,
-        },
+    event = FollowUpCreated(
+        follow_up_id=action.id,
+        encounter_id=encounter.id,
+        patient_id=encounter.patient_id,
+        patient_user=encounter.patient.user,
+        doctor_id=doctor.id,
+        due_date=due_date,
+        description=description,
+        target="FollowUpAction",
     )
+
+    event_registry.dispatch(event)
 
     return action
