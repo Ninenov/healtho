@@ -4,4 +4,5 @@ from .status import AppointmentConfirmed
 __all__ = [
     "AppointmentCreated",
     "AppointmentConfirmed",
+    "AppointmentCancelled",
 ]

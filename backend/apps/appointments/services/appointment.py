@@ -7,6 +7,8 @@ from apps.appointments.events.appointment import AppointmentCreated
 from apps.common.events.registry import event_registry
 from apps.appointments.events.status import AppointmentConfirmed
 from apps.common.events.registry import event_registry
+from apps.appointments.events.status import AppointmentCancelled
+
 
 class AppointmentService:
 
@@ -114,8 +116,18 @@ class AppointmentService:
             new_status=Appointment.Status.CANCELLED,
         )
 
-        return appointment
+        event = AppointmentCancelled(
+            appointment_id=appointment.id,
+            patient_id=appointment.patient_id,
+            patient_user=appointment.patient.user,
+            doctor_id=appointment.doctor_id,
+            scheduled_at=appointment.scheduled_at,
+            appointment_type=appointment.appointment_type,
+        )
 
+        event_registry.dispatch(event)
+
+        return appointment
     @staticmethod
     @transaction.atomic
     def no_show(*, appointment):

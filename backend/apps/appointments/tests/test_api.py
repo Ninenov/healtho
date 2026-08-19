@@ -309,8 +309,33 @@ class AppointmentAPITestCase(APITestCase):
         self.assertEqual(
             self.appointment.status,
             Appointment.Status.CANCELLED,
+        )   
+
+        notification = Notification.objects.get(
+            recipient=self.patient_user,
+            target_type="Appointment",
+            target_id=str(self.appointment.id),
         )
 
+        self.assertEqual(
+            notification.notification_type,
+            Notification.NotificationType.APPOINTMENT,
+        )
+
+        self.assertEqual(
+            notification.title,
+            "Appointment Cancelled",
+        )   
+
+        self.assertEqual(
+            notification.target_id,
+            str(self.appointment.id),
+        )
+
+        self.assertEqual(
+            notification.metadata["doctor_id"],
+            str(self.doctor.id),
+        )
 
     def test_patient_cannot_cancel_another_patients_appointment(self):
         self.client.force_authenticate(
@@ -587,3 +612,26 @@ class AppointmentAPITestCase(APITestCase):
             ).count(),
             0,
         )
+
+    def test_cancellation_notification_is_not_sent_to_another_patient(self):
+        self.client.force_authenticate(
+            user=self.patient.user,
+        )
+
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/cancel/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=self.other_patient_user,
+                target_type="Appointment",
+                target_id=str(self.appointment.id),
+            ).count(),
+            0,
+        )   
