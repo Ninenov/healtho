@@ -1,7 +1,7 @@
 from apps.clinical.events.follow_up import FollowUpCreated
 from apps.notifications.models import Notification
 from apps.notifications.services import create_notification
-
+from apps.clinical.events.encounter import EncounterCompleted
 
 def handle_follow_up_created(event: FollowUpCreated) -> None:
     """
@@ -24,5 +24,23 @@ def handle_follow_up_created(event: FollowUpCreated) -> None:
                 else None
             ),
             "target": event.target,
+        },
+    )
+
+def handle_encounter_completed(event: EncounterCompleted) -> None:
+    """
+    Create a patient notification when an encounter is completed.
+    """
+
+    create_notification(
+        recipient=event.patient_user,
+        notification_type=Notification.NotificationType.CLINICAL,
+        title="Consultation Completed",
+        message="Your clinical consultation has been completed.",
+        target_type="ClinicalEncounter",
+        target_id=event.encounter_id,
+        metadata={
+            "doctor_id": str(event.doctor_id),
+            "appointment_id": str(event.appointment_id),
         },
     )

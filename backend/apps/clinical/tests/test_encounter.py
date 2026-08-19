@@ -11,7 +11,7 @@ from apps.clinical.models.models import ClinicalEncounter
 from apps.clinical.services.encounter import ClinicalEncounterService
 from apps.doctors.models import Doctor
 from apps.patients.models import Patient
-
+from apps.clinical.events.encounter import EncounterCompleted
 
 class ClinicalEncounterServiceTestCase(TestCase):
 
@@ -172,3 +172,20 @@ class ClinicalEncounterServiceTestCase(TestCase):
             encounter.doctor_id,
             appointment.doctor_id,
         )
+    def test_encounter_completed_event_contains_expected_data(self):
+        event = EncounterCompleted(
+            encounter_id=101,
+            patient_id=202,
+            patient_user=self.patient.user,
+            doctor_id=303,
+            appointment_id=404,
+        )
+
+        self.assertEqual(event.encounter_id, 101)
+        self.assertEqual(event.patient_id, 202)
+        self.assertEqual(event.doctor_id, 303)
+        self.assertEqual(event.appointment_id, 404)
+        self.assertEqual(event.patient_user, self.patient.user)
+        self.assertEqual(event.event_name, "EncounterCompleted")
+        self.assertIsNotNone(event.event_id)
+        self.assertIsNotNone(event.occurred_at)

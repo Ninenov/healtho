@@ -13,7 +13,7 @@ from apps.clinical.models.models import (
 )
 from apps.doctors.models import Doctor
 from apps.patients.models import Patient
-
+from apps.notifications.models import Notification
 
 class ClinicalEncounterCompletionAPITestCase(APITestCase):
 
@@ -122,6 +122,64 @@ class ClinicalEncounterCompletionAPITestCase(APITestCase):
         self.assertEqual(
             str(audit_event.metadata["appointment_id"]),
             str(self.appointment.id),
+        )
+
+        notifications = Notification.objects.filter(
+            recipient=self.patient.user,
+            target_type="ClinicalEncounter",
+            target_id=str(self.encounter.id),
+        )
+
+        self.assertEqual(notifications.count(), 1)
+
+        notification = notifications.first()
+
+        self.assertEqual(
+            notification.notification_type,
+            Notification.NotificationType.CLINICAL,
+        )   
+        self.assertEqual(
+            notification.title,
+            "Consultation Completed",
+        )
+        self.assertEqual(
+            notification.target_id,
+            str(self.encounter.id),
+        )
+
+    def test_encounter_completion_notifies_only_encounter_patient(self):
+        other_patient_user = User.objects.create_user(
+            phone="9666666604",
+            role=UserRole.PATIENT,
+        )
+
+        self.client.force_authenticate(
+            user=self.doctor_user,
+        )
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=self.patient_user,
+                target_type="ClinicalEncounter",
+                target_id=str(self.encounter.id),
+            ).count(),
+            1,
+        )   
+
+        self.assertEqual(
+            Notification.objects.filter(
+                recipient=other_patient_user,
+                target_type="ClinicalEncounter",
+                target_id=str(self.encounter.id),
+            ).count(),
+            0,
         )
 
     def test_completed_encounter_is_still_retrievable(self):
