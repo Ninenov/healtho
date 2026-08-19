@@ -349,26 +349,47 @@ class AppointmentAPITestCase(APITestCase):
             Appointment.Status.SCHEDULED,
         )
 
-        def test_doctor_can_confirm_appointment(self):
-            self.client.force_authenticate(
-                user=self.doctor_user,
-            )
+    def test_doctor_can_confirm_appointment(self):
+        self.client.force_authenticate(
+            user=self.doctor_user,
+        )
 
-            response = self.client.post(
-                f"/api/v1/appointments/{self.appointment.id}/confirm/"
-            )
+        response = self.client.post(
+            f"/api/v1/appointments/{self.appointment.id}/confirm/"
+        )
 
-            self.assertEqual(
-                response.status_code,
-                status.HTTP_200_OK,
-            )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
 
-            self.appointment.refresh_from_db()
+        self.appointment.refresh_from_db()
 
-            self.assertEqual(
-                self.appointment.status,
-                Appointment.Status.CONFIRMED,
-            )
+        self.assertEqual(
+            self.appointment.status,
+            Appointment.Status.CONFIRMED,
+        )
+
+        notification = Notification.objects.get(
+            recipient=self.patient_user,
+            target_type="Appointment",
+            target_id=str(self.appointment.id),
+        )
+
+        self.assertEqual(
+            notification.notification_type,
+            Notification.NotificationType.APPOINTMENT,
+        )
+
+        self.assertEqual(
+            notification.title,
+            "Appointment Confirmed",
+        )
+
+        self.assertEqual(
+            notification.metadata["doctor_id"],
+            str(self.doctor.id),
+        )
 
     def test_patient_cannot_confirm_appointment(self):
         self.client.force_authenticate(

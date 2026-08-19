@@ -7,7 +7,9 @@ from .clinical import (
     handle_appointment_created,
     handle_encounter_completed,
     handle_follow_up_created,
+    handle_appointment_confirmed,
 )
+from apps.appointments.events.status import AppointmentConfirmed
 
 
 def register_notification_handlers() -> None:
@@ -24,4 +26,9 @@ def register_notification_handlers() -> None:
     event_registry.register(
         AppointmentCreated,
         handle_appointment_created,
+    )
+
+    event_registry.register(
+        AppointmentConfirmed,
+        handle_appointment_confirmed,
     )
