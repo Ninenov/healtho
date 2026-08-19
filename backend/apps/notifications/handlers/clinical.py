@@ -5,7 +5,7 @@ from apps.clinical.events.encounter import EncounterCompleted
 from apps.appointments.events.appointment import AppointmentCreated
 from apps.appointments.events.status import AppointmentConfirmed
 from apps.appointments.events.status import AppointmentCancelled
-
+from apps.appointments.events.status import AppointmentReminderDue
 
 def handle_follow_up_created(event: FollowUpCreated) -> None:
     """
@@ -119,5 +119,44 @@ def handle_appointment_cancelled(
                 else None
             ),
             "appointment_type": event.appointment_type,
+        },
+    )
+
+def handle_appointment_reminder_due(
+    event: AppointmentReminderDue,
+) -> None:
+    """
+    Create a patient notification when an appointment reminder is due.
+    """
+
+    if event.reminder_type == "24_HOUR":
+        title = "Appointment Reminder"
+        message = "You have an appointment scheduled tomorrow."
+
+    elif event.reminder_type == "1_HOUR":
+        title = "Appointment Reminder"
+        message = "You have an appointment scheduled in 1 hour."
+
+    else:
+        raise ValueError(
+            f"Unsupported reminder type: {event.reminder_type}"
+        )
+
+    create_notification(
+        recipient=event.patient_user,
+        notification_type=Notification.NotificationType.APPOINTMENT,
+        title=title,
+        message=message,
+        target_type="Appointment",
+        target_id=event.appointment_id,
+        metadata={
+            "doctor_id": str(event.doctor_id),
+            "scheduled_at": (
+                event.scheduled_at.isoformat()
+                if event.scheduled_at
+                else None
+            ),
+            "appointment_type": event.appointment_type,
+            "reminder_type": event.reminder_type,
         },
     )

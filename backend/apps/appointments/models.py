@@ -91,3 +91,39 @@ class Appointment(BaseModel):
             f"{self.doctor.user.phone} - "
             f"{self.scheduled_at}"
         )
+
+class AppointmentReminder(BaseModel):
+
+    class ReminderType(models.TextChoices):
+        TWENTY_FOUR_HOUR = "24_HOUR", "24 Hour"
+        ONE_HOUR = "1_HOUR", "1 Hour"
+
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name="reminders",
+    )
+
+    reminder_type = models.CharField(
+        max_length=20,
+        choices=ReminderType.choices,
+    )
+
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["appointment", "reminder_type"],
+                name="unique_appointment_reminder_type",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.appointment_id} - "
+            f"{self.reminder_type}"
+        )
