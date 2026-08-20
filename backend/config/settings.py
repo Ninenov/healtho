@@ -176,17 +176,26 @@ AUTHENTICATION_BACKENDS = [
     "apps.accounts.backends.PhoneBackend",
 ]
 
-CELERY_BROKER_URL = os.getenv(
+CELERY_BROKER_URL = config(
     "CELERY_BROKER_URL",
-    "redis://localhost:6379/0",
+    default="redis://localhost:6379/0",
 )
 
-CELERY_RESULT_BACKEND = os.getenv(
+CELERY_RESULT_BACKEND = config(
     "CELERY_RESULT_BACKEND",
-    "redis://localhost:6379/0",
+    default="redis://localhost:6379/0",
 )
 
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 300
-CELERY_TASK_SOFT_TIME_LIMIT = 240
 
+CELERY_TASK_TIME_LIMIT = config(
+    "CELERY_TASK_TIME_LIMIT",
+    default=300,
+    cast=int,
+)
+
+CELERY_TASK_SOFT_TIME_LIMIT = config(
+    "CELERY_TASK_SOFT_TIME_LIMIT",
+    default=240,
+    cast=int,
+)
