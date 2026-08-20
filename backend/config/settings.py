@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # Local Apps
-    "apps.common",
+    "apps.common.apps.CommonConfig",
     "apps.accounts",
     "apps.patients",
     "apps.doctors",
