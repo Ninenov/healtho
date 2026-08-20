@@ -152,6 +152,7 @@ class DoctorAvailabilityDetailView(APIView):
 
         return Response(
             DoctorAvailabilitySerializer(availability).data,
+            status=status.HTTP_200_OK,
         )
 
     def delete(self, request, availability_id):

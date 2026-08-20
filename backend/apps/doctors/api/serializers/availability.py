@@ -20,6 +20,7 @@ class DoctorAvailabilitySerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "doctor",
             "created_at",
             "updated_at",
         ]

@@ -24,7 +24,10 @@ class AppointmentClinicalRecordCreateView(APIView):
 
         appointment = (
             Appointment.objects
-            .filter(id=appointment_id)
+            .filter(
+                id=appointment_id,
+                doctor=doctor,
+            )
             .select_related("patient", "doctor")
             .first()
         )

@@ -16,4 +16,8 @@ urlpatterns = [
         "audit/",
         include("apps.common.api.urls"),
     ),
+    path(
+        "doctors/",
+        include("apps.doctors.api.urls"),
+    ),
 ]
