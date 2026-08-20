@@ -11,5 +11,9 @@ urlpatterns = [
     path(
     "notifications/",
     include("apps.notifications.api.urls"),
-),
+    ),
+    path(
+        "audit/",
+        include("apps.common.api.urls"),
+    ),
 ]
