@@ -127,3 +127,4 @@ class AppointmentReminder(BaseModel):
             f"{self.appointment_id} - "
             f"{self.reminder_type}"
         )
+

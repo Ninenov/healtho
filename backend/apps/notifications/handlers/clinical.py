@@ -1,11 +1,19 @@
 from apps.clinical.events.follow_up import FollowUpCreated
-from apps.notifications.models import Notification
+from apps.notifications.models import Notification, NotificationDelivery
 from apps.notifications.services import create_notification
 from apps.clinical.events.encounter import EncounterCompleted
 from apps.appointments.events.appointment import AppointmentCreated
 from apps.appointments.events.status import AppointmentConfirmed
 from apps.appointments.events.status import AppointmentCancelled
 from apps.appointments.events.status import AppointmentReminderDue
+from apps.notifications.services import (
+    create_notification,
+    create_notification_delivery,
+)
+from apps.notifications.tasks import (
+    process_notification_delivery_task,
+)
+
 
 def handle_follow_up_created(event: FollowUpCreated) -> None:
     """
@@ -142,10 +150,11 @@ def handle_appointment_reminder_due(
             f"Unsupported reminder type: {event.reminder_type}"
         )
 
-    create_notification(
+    notification = create_notification(
         recipient=event.patient_user,
         notification_type=Notification.NotificationType.APPOINTMENT,
         title=title,
+        event_id=event.event_id,
         message=message,
         target_type="Appointment",
         target_id=event.appointment_id,
@@ -160,3 +169,18 @@ def handle_appointment_reminder_due(
             "reminder_type": event.reminder_type,
         },
     )
+
+    delivery_exists = NotificationDelivery.objects.filter(
+        notification=notification,
+        channel=NotificationDelivery.Channel.IN_APP,
+    ).exists()
+
+    delivery = create_notification_delivery(
+        notification=notification,
+        channel=NotificationDelivery.Channel.IN_APP,
+    )
+
+    if not delivery_exists:
+        process_notification_delivery_task.delay(
+            delivery.id,
+        )

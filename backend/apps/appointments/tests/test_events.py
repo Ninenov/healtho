@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-
-from django.test import SimpleTestCase
+from unittest.mock import patch
+from django.test import TestCase, SimpleTestCase
 from apps.appointments.events.status import AppointmentReminderDue
 from apps.appointments.events.appointment import AppointmentCreated
 
@@ -88,7 +88,7 @@ class AppointmentCreatedEventTests(SimpleTestCase):
         )
         self.assertNotIn("patient_user", payload)
 
-class AppointmentReminderDueEventTests(SimpleTestCase):
+class AppointmentReminderDueEventTests(TestCase):
 
     def test_event_contains_expected_data(self):
         scheduled_at = datetime(
@@ -185,4 +185,122 @@ class AppointmentReminderDueEventTests(SimpleTestCase):
         self.assertNotIn(
             "patient_user",
             payload,
+        )
+
+    @patch(
+        "apps.notifications.handlers.clinical.process_notification_delivery_task.delay"
+    )
+    def test_reminder_event_creates_notification_and_delivery(
+        self,
+        mock_delay,
+    ):
+        from apps.accounts.constants.user_roles import UserRole
+        from apps.accounts.models import User
+        from apps.appointments.events.status import AppointmentReminderDue
+        from apps.common.events.registry import event_registry
+        from apps.notifications.models import (
+            Notification,
+            NotificationDelivery,
+        )
+
+        patient_user = User.objects.create_user(
+            phone="9999999940",
+            role=UserRole.PATIENT,
+        )
+
+        event = AppointmentReminderDue(
+            appointment_id=101,
+            patient_id=202,
+            patient_user=patient_user,
+            doctor_id=303,
+            scheduled_at=datetime(
+                2026,
+                8,
+                20,
+                10,
+                0,
+                tzinfo=timezone.utc,
+            ),
+            appointment_type="CONSULTATION",
+            reminder_type="1_HOUR",
+        )
+
+        event_registry.dispatch(event)
+
+        notification = Notification.objects.get(
+            recipient=patient_user,
+            target_id="101",
+            metadata__reminder_type="1_HOUR",
+        )   
+
+        delivery = NotificationDelivery.objects.get(
+            notification=notification,
+            channel=NotificationDelivery.Channel.IN_APP,
+        )   
+
+        self.assertEqual(
+            delivery.status,
+            NotificationDelivery.Status.PENDING,
+        )
+
+        mock_delay.assert_called_once_with(
+            delivery.id,
+        )
+
+    @patch(
+        "apps.notifications.handlers.clinical.process_notification_delivery_task.delay"
+    )
+    def test_same_event_dispatch_creates_single_delivery(
+        self,
+        mock_delay,
+    ):
+        from apps.accounts.constants.user_roles import UserRole
+        from apps.accounts.models import User
+        from apps.appointments.events.status import AppointmentReminderDue
+        from apps.common.events.registry import event_registry
+        from apps.notifications.models import (
+            Notification,
+            NotificationDelivery,
+        )
+
+        patient_user = User.objects.create_user(
+            phone="9999999950",
+            role=UserRole.PATIENT,
+        )
+
+        event = AppointmentReminderDue(
+            appointment_id=101,
+            patient_id=202,
+            patient_user=patient_user,
+            doctor_id=303,
+            scheduled_at=datetime(
+                2026,
+                8,
+                20,
+                10,
+                0,
+                tzinfo=timezone.utc,
+            ),
+            appointment_type="CONSULTATION",
+            reminder_type="1_HOUR",
+        )
+
+        event_registry.dispatch(event)
+        event_registry.dispatch(event)
+
+        deliveries = NotificationDelivery.objects.filter(
+            channel=NotificationDelivery.Channel.IN_APP,
+            notification__recipient=patient_user,
+            notification__target_id="101",
+            notification__metadata__reminder_type="1_HOUR",
+        )
+
+        self.assertEqual(
+            deliveries.count(),
+            1,
+        )
+
+        self.assertEqual(
+            mock_delay.call_count,
+            1,
         )

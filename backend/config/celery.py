@@ -10,6 +10,7 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 
 app.conf.imports = (
     "apps.appointments.tasks",
+    "apps.notifications.tasks",
 )
 
 app.conf.beat_schedule = {
