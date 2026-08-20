@@ -1,4 +1,5 @@
 import logging
+import time
 
 from celery import shared_task
 
@@ -26,6 +27,8 @@ def process_notification_delivery_task(
     NotificationDeliveryService owns delivery business logic.
     """
 
+    start_time = time.monotonic()
+
     logger.info(
         "Notification delivery task started",
         extra={
@@ -46,6 +49,11 @@ def process_notification_delivery_task(
             extra={
                 "task_id": self.request.id,
                 "delivery_id": delivery_id,
+                "retry_count": self.request.retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
         )
 
@@ -53,6 +61,8 @@ def process_notification_delivery_task(
             "delivery_id": delivery_id,
             "status": "not_found",
         }
+
+    notification_id = delivery.notification_id
 
     try:
         delivery = process_notification_delivery(
@@ -64,8 +74,14 @@ def process_notification_delivery_task(
             extra={
                 "task_id": self.request.id,
                 "delivery_id": delivery.id,
+                "notification_id": notification_id,
                 "status": delivery.status,
                 "attempts": delivery.attempts,
+                "retry_count": self.request.retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
         )
 
@@ -81,7 +97,13 @@ def process_notification_delivery_task(
             extra={
                 "task_id": self.request.id,
                 "delivery_id": delivery_id,
+                "notification_id": notification_id,
                 "retry_count": self.request.retries,
+                "max_retries": self.max_retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
             exc_info=True,
         )

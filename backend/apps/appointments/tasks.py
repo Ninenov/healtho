@@ -1,11 +1,15 @@
 import logging
+import time
+
 import redis
 
 from celery import shared_task
 from django.conf import settings
 from django.db import OperationalError
 
-from apps.appointments.services.reminder import AppointmentReminderService
+from apps.appointments.services.reminder import (
+    AppointmentReminderService,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -15,7 +19,10 @@ redis_client = redis.Redis.from_url(
     settings.CELERY_BROKER_URL,
 )
 
-REMINDER_LOCK_KEY = "healthos:appointments:reminder-processing"
+REMINDER_LOCK_KEY = (
+    "healthos:appointments:reminder-processing"
+)
+
 REMINDER_LOCK_TIMEOUT = 240
 
 
@@ -31,8 +38,11 @@ def process_appointment_reminders(self):
 
     Celery handles background execution and retries.
     Redis prevents overlapping executions.
-    Reminder business logic remains inside AppointmentReminderService.
+    Reminder business logic remains inside
+    AppointmentReminderService.
     """
+
+    start_time = time.monotonic()
 
     logger.info(
         "Appointment reminder task started",
@@ -50,9 +60,15 @@ def process_appointment_reminders(self):
 
     if not lock.acquire():
         logger.info(
-            "Appointment reminder task skipped: another execution is already running",
+            "Appointment reminder task skipped: "
+            "another execution is already running",
             extra={
                 "task_id": self.request.id,
+                "retry_count": self.request.retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
         )
 
@@ -85,6 +101,11 @@ def process_appointment_reminders(self):
             extra={
                 "task_id": self.request.id,
                 "processed": len(processed),
+                "retry_count": self.request.retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
         )
 
@@ -92,11 +113,16 @@ def process_appointment_reminders(self):
 
     except OperationalError as exc:
         logger.warning(
-            "Appointment reminder task retrying after database error",
+            "Appointment reminder task retrying "
+            "after database error",
             extra={
                 "task_id": self.request.id,
                 "retry_count": self.request.retries,
                 "max_retries": self.max_retries,
+                "duration_ms": round(
+                    (time.monotonic() - start_time) * 1000,
+                    2,
+                ),
             },
             exc_info=True,
         )
@@ -106,10 +132,16 @@ def process_appointment_reminders(self):
     finally:
         try:
             lock.release()
+
         except redis.exceptions.LockError:
             logger.warning(
                 "Appointment reminder lock could not be released",
                 extra={
                     "task_id": self.request.id,
+                    "retry_count": self.request.retries,
+                    "duration_ms": round(
+                        (time.monotonic() - start_time) * 1000,
+                        2,
+                    ),
                 },
             )

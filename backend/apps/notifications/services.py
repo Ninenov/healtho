@@ -93,11 +93,11 @@ def create_notification_delivery(
 
     return delivery
 
-@transaction.atomic
 def process_notification_delivery(
     *,
     delivery: NotificationDelivery,
 ) -> NotificationDelivery:
+
     if not delivery:
         raise ValidationError(
             "Notification delivery is required."
@@ -105,14 +105,14 @@ def process_notification_delivery(
 
     delivery.refresh_from_db()
 
-    # Idempotency: an already delivered notification
-    # must never be delivered again.
     if delivery.status == NotificationDelivery.Status.SENT:
         return delivery
 
-    delivery.status = NotificationDelivery.Status.PROCESSING
+    # Record the attempt outside the transactional delivery operation.
     delivery.attempts += 1
     delivery.last_error = ""
+    delivery.status = NotificationDelivery.Status.PROCESSING
+
     delivery.save(
         update_fields=[
             "status",
@@ -124,10 +124,9 @@ def process_notification_delivery(
 
     try:
         if delivery.channel == NotificationDelivery.Channel.IN_APP:
-            # The Notification record itself represents
-            # the in-app delivery.
             delivery.status = NotificationDelivery.Status.SENT
             delivery.sent_at = timezone.now()
+
             delivery.save(
                 update_fields=[
                     "status",
@@ -145,6 +144,7 @@ def process_notification_delivery(
     except Exception as exc:
         delivery.status = NotificationDelivery.Status.FAILED
         delivery.last_error = str(exc)
+
         delivery.save(
             update_fields=[
                 "status",
@@ -155,3 +155,39 @@ def process_notification_delivery(
 
         raise
 
+@transaction.atomic
+def _process_notification_delivery(
+    *,
+    delivery: NotificationDelivery,
+) -> NotificationDelivery:
+
+    delivery.status = NotificationDelivery.Status.PROCESSING
+    delivery.attempts += 1
+    delivery.last_error = ""
+
+    delivery.save(
+        update_fields=[
+            "status",
+            "attempts",
+            "last_error",
+            "updated_at",
+        ]
+    )
+
+    if delivery.channel == NotificationDelivery.Channel.IN_APP:
+        delivery.status = NotificationDelivery.Status.SENT
+        delivery.sent_at = timezone.now()
+
+        delivery.save(
+            update_fields=[
+                "status",
+                "sent_at",
+                "updated_at",
+            ]
+        )
+
+        return delivery
+
+    raise ValidationError(
+        f"Unsupported delivery channel: {delivery.channel}"
+    )

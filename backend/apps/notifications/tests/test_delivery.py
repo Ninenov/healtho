@@ -136,3 +136,34 @@ class NotificationDeliveryServiceTestCase(TestCase):
             second.sent_at,
             first_sent_at,
         )
+
+    def test_failed_delivery_records_error(self):
+        delivery = create_notification_delivery(
+            notification=self.notification,
+            channel=NotificationDelivery.Channel.EMAIL,
+        )
+
+        with self.assertRaises(Exception):
+            process_notification_delivery(
+                delivery=delivery,
+            )
+
+        delivery.refresh_from_db()
+
+        self.assertEqual(
+            delivery.status,
+            NotificationDelivery.Status.FAILED,
+        )
+
+        self.assertEqual(
+            delivery.attempts,
+            1,
+        )
+
+        self.assertTrue(
+            delivery.last_error,
+        )
+
+        self.assertIsNone(
+            delivery.sent_at,
+        )

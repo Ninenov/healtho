@@ -1,5 +1,7 @@
 from unittest.mock import patch
-
+from unittest.mock import patch
+from celery.exceptions import Retry
+from django.test import TestCase
 from django.test import TestCase
 
 from apps.accounts.constants.user_roles import UserRole
@@ -105,4 +107,97 @@ class NotificationDeliveryTaskTestCase(TestCase):
         self.assertEqual(
             result["attempts"],
             self.delivery.attempts,
+        )
+
+    @patch(
+        "apps.notifications.tasks.process_notification_delivery"
+    )
+    def test_task_retries_when_delivery_processing_fails(
+        self,
+        mock_process,
+    ):
+        mock_process.side_effect = RuntimeError(
+            "Delivery provider unavailable"
+        )   
+
+        with self.assertRaises(RuntimeError):
+            process_notification_delivery_task.run(
+                self.delivery.id,
+            )
+
+        mock_process.assert_called_once()
+
+        self.assertEqual(
+            process_notification_delivery_task.max_retries,
+            3,
+        )
+
+    @patch(
+        "apps.notifications.tasks.process_notification_delivery"
+    )
+    @patch(
+        "apps.notifications.tasks.logger.warning"
+    )
+    def test_task_logs_failure_before_retry(
+        self,
+        mock_logger,
+        mock_process,
+    ):
+        mock_process.side_effect = RuntimeError(
+            "Delivery provider unavailable"
+        )
+
+        with self.assertRaises(RuntimeError):
+            process_notification_delivery_task.run(
+                self.delivery.id,
+            )
+
+        mock_logger.assert_called_once()
+
+        log_message = mock_logger.call_args.args[0]
+
+        self.assertEqual(
+            log_message,
+            "Notification delivery task failed; retrying",
+        )
+
+        log_extra = mock_logger.call_args.kwargs["extra"]
+
+        self.assertEqual(
+            log_extra["delivery_id"],
+            self.delivery.id,
+        )
+
+        self.assertEqual(
+            log_extra["notification_id"],
+            self.notification.id,
+        )
+
+        self.assertEqual(
+            log_extra["retry_count"],
+            0,
+        )
+
+        self.assertEqual(
+            log_extra["max_retries"],
+            3,
+        )
+
+        self.assertIn(
+            "duration_ms",
+            log_extra,
+        )
+
+    def test_task_has_expected_retry_configuration(self):
+        self.assertEqual(
+            process_notification_delivery_task.max_retries,
+            3,
+        )   
+
+        self.assertTrue(
+            process_notification_delivery_task.retry_backoff,
+        )
+
+        self.assertTrue(
+            process_notification_delivery_task.retry_jitter,
         )

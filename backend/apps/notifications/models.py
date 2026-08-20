@@ -146,4 +146,3 @@ class NotificationDelivery(models.Model):
             f"{self.channel} - "
             f"{self.status}"
         )
-    
