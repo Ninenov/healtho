@@ -5,7 +5,6 @@ from apps.notifications.api.views import (
     NotificationMarkReadView,
 )
 
-
 urlpatterns = [
     path(
         "",
