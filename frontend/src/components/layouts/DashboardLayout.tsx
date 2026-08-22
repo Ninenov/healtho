@@ -20,10 +20,14 @@ export function DashboardLayout({
       />
 
       <div className="lg:pl-64">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar
+          onMenuClick={() => setMobileOpen(true)}
+        />
 
-        <main className="min-h-[calc(100vh-4rem)] p-4 sm:p-6">
-          {children}
+        <main className="min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl">
+            {children}
+          </div>
         </main>
       </div>
     </div>

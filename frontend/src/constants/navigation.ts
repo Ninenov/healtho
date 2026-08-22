@@ -25,11 +25,26 @@ export const NAVIGATION: Record<Role, NavItem[]> = {
   ],
 
   [ROLES.HOSPITAL]: [
-    { label: "Dashboard", href: "/dashboard/hospital", icon: "LayoutDashboard" },
-    { label: "Doctors", href: "/dashboard/hospital/doctors", icon: "Stethoscope" },
-    { label: "Patients", href: "/dashboard/hospital/patients", icon: "Users" },
-    { label: "Appointments", href: "/dashboard/hospital/appointments", icon: "CalendarDays" },
-    { label: "Operations", href: "/dashboard/hospital/operations", icon: "Building2" },
+    {
+      label: "Dashboard",
+      href: "/dashboard/hospital",
+      icon: "LayoutDashboard",
+    },
+    {
+      label: "Patients",
+      href: "/dashboard/hospital/patients",
+      icon: "Users",
+    },
+    {
+      label: "Appointments",
+      href: "/dashboard/hospital/appointments",
+      icon: "CalendarDays",
+    },
+    {
+      label: "Operations",
+      href: "/dashboard/hospital/operations",
+      icon: "Building2",
+    },
   ],
 
   [ROLES.ADMIN]: [

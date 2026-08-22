@@ -11,6 +11,9 @@ from apps.appointments.api.views.lifecycle import (
     AppointmentCompleteView,
     AppointmentNoShowView,
 )
+from apps.appointments.api.views.doctor import (
+    DoctorAppointmentListView,
+)
 
 urlpatterns = [
     path(
@@ -48,4 +51,10 @@ urlpatterns = [
         AppointmentNoShowView.as_view(),
         name="appointment-no-show",
     ),
+    path(
+        "doctor/",
+        DoctorAppointmentListView.as_view(),
+        name="doctor-appointment-list",
+    ),
+
 ]
