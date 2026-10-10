@@ -15,9 +15,8 @@ class PatientProfileAPIView(APIView):
 
         if patient is None:
             raise NotFound("Patient profile not found.")
-        
-        serializer = PatientSerializer(patient)
 
+        serializer = PatientSerializer(patient)
         return Response(serializer.data)
 
     def patch(self, request):

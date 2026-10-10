@@ -1,3 +1,4 @@
+
 import axios, {
   type AxiosError,
   type InternalAxiosRequestConfig,
@@ -27,16 +28,10 @@ export const setTokens = (
 ) => {
   if (typeof window === "undefined") return;
 
-  sessionStorage.setItem(
-    ACCESS_TOKEN_KEY,
-    access,
-  );
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, access);
 
   if (refresh) {
-    sessionStorage.setItem(
-      REFRESH_TOKEN_KEY,
-      refresh,
-    );
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refresh);
   }
 };
 
@@ -47,13 +42,18 @@ export const clearTokens = () => {
   sessionStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
+/**
+ * Main API client.
+ * Do not force Content-Type globally: Axios must be able to set
+ * the multipart boundary automatically for FormData uploads.
+ */
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
+/**
+ * Separate client for token refresh requests, which send JSON.
+ */
 const refreshClient = axios.create({
   baseURL: env.apiUrl,
   headers: {
@@ -78,7 +78,6 @@ async function refreshAccessToken(): Promise<string> {
       )
       .then((response) => {
         setTokens(response.data.access);
-
         return response.data.access;
       })
       .finally(() => {
@@ -94,8 +93,7 @@ apiClient.interceptors.request.use(
     const accessToken = getAccessToken();
 
     if (accessToken) {
-      config.headers.Authorization =
-        `Bearer ${accessToken}`;
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     return config;
@@ -108,17 +106,15 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as
       | (InternalAxiosRequestConfig & {
-          _retry?: boolean;
-        })
+        _retry?: boolean;
+      })
       | undefined;
 
     if (
       error.response?.status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      originalRequest.url?.includes(
-        "/auth/refresh/",
-      )
+      originalRequest.url?.includes("/auth/refresh/")
     ) {
       return Promise.reject(error);
     }
@@ -126,8 +122,7 @@ apiClient.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const accessToken =
-        await refreshAccessToken();
+      const accessToken = await refreshAccessToken();
 
       originalRequest.headers.Authorization =
         `Bearer ${accessToken}`;

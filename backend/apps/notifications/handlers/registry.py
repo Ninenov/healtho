@@ -17,11 +17,19 @@ from apps.appointments.events.status import (
     AppointmentConfirmed,
     AppointmentReminderDue,
 )
+from apps.appointments.events.status import AppointmentNoShow
+from .clinical import handle_appointment_no_show
+
 
 def register_notification_handlers() -> None:
     event_registry.register(
         FollowUpCreated,
         handle_follow_up_created,
+    )
+
+    event_registry.register(
+        AppointmentNoShow,
+        handle_appointment_no_show,
     )
 
     event_registry.register(

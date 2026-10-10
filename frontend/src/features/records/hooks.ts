@@ -1,18 +1,15 @@
-"use client";
+﻿"use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createMedicalRecord,
   deleteMedicalRecord,
   getMedicalRecord,
   getMedicalRecords,
   updateMedicalRecord,
+  uploadMedicalRecord,
   type CreateMedicalRecordRequest,
+  type UploadMedicalRecordRequest,
 } from "./api";
 
 export const recordKeys = {
@@ -42,12 +39,19 @@ export function useCreateMedicalRecord() {
   return useMutation({
     mutationFn: (data: CreateMedicalRecordRequest) =>
       createMedicalRecord(data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: recordKeys.list() }),
+  });
+}
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: recordKeys.list(),
-      });
-    },
+export function useUploadMedicalRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UploadMedicalRecordRequest) =>
+      uploadMedicalRecord(data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: recordKeys.list() }),
   });
 }
 
@@ -55,19 +59,11 @@ export function useUpdateMedicalRecord(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      data: Partial<CreateMedicalRecordRequest>,
-    ) => updateMedicalRecord(id, data),
-
+    mutationFn: (data: Partial<CreateMedicalRecordRequest>) =>
+      updateMedicalRecord(id, data),
     onSuccess: (record) => {
-      queryClient.setQueryData(
-        recordKeys.detail(id),
-        record,
-      );
-
-      queryClient.invalidateQueries({
-        queryKey: recordKeys.list(),
-      });
+      queryClient.setQueryData(recordKeys.detail(id), record);
+      queryClient.invalidateQueries({ queryKey: recordKeys.list() });
     },
   });
 }
@@ -77,15 +73,9 @@ export function useDeleteMedicalRecord() {
 
   return useMutation({
     mutationFn: (id: string) => deleteMedicalRecord(id),
-
     onSuccess: (_, id) => {
-      queryClient.removeQueries({
-        queryKey: recordKeys.detail(id),
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: recordKeys.list(),
-      });
+      queryClient.removeQueries({ queryKey: recordKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: recordKeys.list() });
     },
   });
 }

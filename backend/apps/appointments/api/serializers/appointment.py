@@ -5,7 +5,6 @@ from apps.doctors.models import Doctor
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-
     doctor = serializers.PrimaryKeyRelatedField(
         queryset=Doctor.objects.all(),
     )
@@ -14,11 +13,28 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    patient_uid = serializers.CharField(
+        source="patient.healthos_uid",
+        read_only=True,
+    )
+
+    patient_name = serializers.SerializerMethodField()
+
+    def get_patient_name(self, obj):
+        user = obj.patient.user
+
+        return (
+            f"{user.first_name} {user.last_name}"
+        ).strip() or "Patient"
+
     class Meta:
         model = Appointment
+
         fields = [
             "id",
             "patient",
+            "patient_uid",
+            "patient_name",
             "doctor",
             "appointment_type",
             "scheduled_at",
@@ -32,6 +48,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "patient",
+            "patient_uid",
+            "patient_name",
             "status",
             "created_at",
             "updated_at",

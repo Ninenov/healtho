@@ -6,6 +6,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import { getMyClinicalHistory } from "./api";
+
 import {
   completeEncounter,
   createDiagnosis,
@@ -15,7 +17,10 @@ import {
   getDiagnoses,
   getEncounter,
   getFollowUps,
+  getPatientClinicalHistory,
   getPrescriptions,
+  getPatientClinical,
+  getPatientClinicalContext,
   type CreateDiagnosisRequest,
   type CreateEncounterRequest,
   type CreateFollowUpRequest,
@@ -36,6 +41,9 @@ export const clinicalKeys = {
 
   followUps: (encounterId: string) =>
     [...clinicalKeys.all, "follow-ups", encounterId] as const,
+
+  patientHistory: (patientId: string) =>
+    [...clinicalKeys.all, "patient-history", patientId] as const,
 };
 
 export function useEncounter(appointmentId: string) {
@@ -161,5 +169,51 @@ export function useCompleteEncounter() {
         encounter,
       );
     },
+  });
+}
+
+export function usePatientClinicalHistory(
+  patientId: string,
+) {
+  return useQuery({
+    queryKey: clinicalKeys.patientHistory(patientId),
+    queryFn: () => getPatientClinicalHistory(patientId),
+    enabled: Boolean(patientId),
+  });
+}
+
+export function usePatientClinical(
+  patientId: string,
+) {
+  return useQuery({
+    queryKey: [
+      ...clinicalKeys.all,
+      "patient",
+      patientId,
+    ],
+    queryFn: () => getPatientClinical(patientId),
+    enabled: Boolean(patientId),
+  });
+}
+
+export function usePatientClinicalContext(
+  patientId: string,
+) {
+  return useQuery({
+    queryKey: [
+      ...clinicalKeys.all,
+      "context",
+      patientId,
+    ],
+    queryFn: () =>
+      getPatientClinicalContext(patientId),
+    enabled: Boolean(patientId),
+  });
+}
+
+export function useMyClinicalHistory() {
+  return useQuery({
+    queryKey: ["clinical", "my-history"],
+    queryFn: getMyClinicalHistory,
   });
 }

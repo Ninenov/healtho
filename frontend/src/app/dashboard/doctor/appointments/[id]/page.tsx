@@ -2,982 +2,536 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  UserRound,
+  XCircle,
+} from "lucide-react";
+
+import { LoadingState } from "@/components/common/LoadingState";
+import { ErrorState } from "@/components/common/ErrorState";
 
 import {
   useAppointment,
+  useCancelAppointment,
+  useConfirmAppointment,
+  useNoShowAppointment,
+  useStartAppointment,
 } from "@/features/appointments/hooks";
 
-import {
-  useCompleteEncounter,
-  useCreateDiagnosis,
-  useCreateEncounter,
-  useCreateFollowUp,
-  useCreatePrescription,
-  useDiagnoses,
-  useEncounter,
-  useFollowUps,
-  usePrescriptions,
-} from "@/features/clinical/hooks";
+function statusClasses(status: string) {
+  switch (status) {
+    case "CONFIRMED":
+      return "bg-blue-50 text-blue-800 ring-blue-700/10";
 
-import { ErrorState } from "@/components/common/ErrorState";
-import { LoadingState } from "@/components/common/LoadingState";
+    case "IN_PROGRESS":
+      return "bg-amber-50 text-amber-900 ring-amber-700/10";
 
-export default function DoctorClinicalWorkspacePage() {
-  const params = useParams();
+    case "COMPLETED":
+      return "bg-emerald-50 text-emerald-800 ring-emerald-700/10";
 
-  const appointmentId =
-    typeof params.id === "string"
-      ? params.id
-      : "";
+    case "CANCELLED":
+      return "bg-red-50 text-red-800 ring-red-700/10";
+
+    case "NO_SHOW":
+      return "bg-orange-50 text-orange-800 ring-orange-700/10";
+
+    default:
+      return "bg-gray-100 text-gray-800 ring-gray-600/10";
+  }
+}
+
+function formatStatus(status: string) {
+  return status.replaceAll("_", " ");
+}
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("en-IN", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+}
+
+export default function DoctorAppointmentDetailPage() {
+  const params = useParams<{ id: string }>();
+  const appointmentId = params.id;
 
   const {
     data: appointment,
-    isLoading: appointmentLoading,
-    isError: appointmentError,
+    isLoading,
+    isError,
+    refetch,
   } = useAppointment(appointmentId);
 
-  const {
-    data: encounter,
-    isLoading: encounterLoading,
-    isError: encounterError,
-  } = useEncounter(appointmentId);
+  const confirmMutation =
+    useConfirmAppointment();
 
-  const createEncounterMutation =
-    useCreateEncounter(appointmentId);
+  const startMutation =
+    useStartAppointment();
 
-  const encounterId = encounter?.id ?? "";
+  const noShowMutation =
+    useNoShowAppointment();
 
-  const {
-    data: diagnoses = [],
-    isLoading: diagnosesLoading,
-  } = useDiagnoses(encounterId);
+  const cancelMutation =
+    useCancelAppointment();
 
-  const {
-    data: prescriptions = [],
-    isLoading: prescriptionsLoading,
-  } = usePrescriptions(encounterId);
-
-  const {
-    data: followUps = [],
-    isLoading: followUpsLoading,
-  } = useFollowUps(encounterId);
-
-  const createDiagnosisMutation =
-    useCreateDiagnosis(encounterId);
-
-  const createPrescriptionMutation =
-    useCreatePrescription(encounterId);
-
-  const createFollowUpMutation =
-    useCreateFollowUp(encounterId);
-
-  const completeMutation =
-    useCompleteEncounter();
-
-  const completeEncounterMutation =
-    useCompleteEncounter();
-
-  const [encounterForm, setEncounterForm] = useState({
-    chief_complaint: "",
-    symptoms: "",
-    examination_findings: "",
-    assessment: "",
-    plan: "",
-    notes: "",
-  });
-
-  const [diagnosisForm, setDiagnosisForm] = useState({
-    diagnosis: "",
-    description: "",
-    diagnosis_type: "",
-    notes: "",
-  });
-
-  const [prescriptionForm, setPrescriptionForm] =
-    useState({
-      medication: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      route: "",
-      instructions: "",
-    });
-
-  const [followUpForm, setFollowUpForm] = useState({
-    description: "",
-    due_date: "",
-    notes: "",
-  });
-
-  if (appointmentLoading) {
+  if (isLoading) {
     return (
       <LoadingState message="Loading appointment..." />
     );
   }
 
-  if (appointmentError || !appointment) {
+  if (isError || !appointment) {
     return (
       <main className="p-6">
         <ErrorState
           title="Appointment unavailable"
           description="The appointment could not be loaded."
+          onRetry={() => refetch()}
         />
       </main>
     );
   }
 
-  const isCreatingEncounter =
-    createEncounterMutation.isPending;
+  const isPending =
+    confirmMutation.isPending ||
+    startMutation.isPending ||
+    noShowMutation.isPending ||
+    cancelMutation.isPending;
 
-  const isAddingDiagnosis =
-    createDiagnosisMutation.isPending;
-
-  const isAddingPrescription =
-    createPrescriptionMutation.isPending;
-
-  const isAddingFollowUp =
-    createFollowUpMutation.isPending;
-
-  const isCompleting =
-    completeEncounterMutation.isPending;
-
-  const handleCreateEncounter = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    await createEncounterMutation.mutateAsync(
-      encounterForm,
+  const handleConfirm = async () => {
+    await confirmMutation.mutateAsync(
+      appointmentId,
     );
   };
 
-  const handleCreateDiagnosis = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    if (!encounterId) return;
-
-    await createDiagnosisMutation.mutateAsync(
-      diagnosisForm,
+  const handleStart = async () => {
+    await startMutation.mutateAsync(
+      appointmentId,
     );
-
-    setDiagnosisForm({
-      diagnosis: "",
-      description: "",
-      diagnosis_type: "",
-      notes: "",
-    });
   };
 
-  const handleCreatePrescription = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    if (!encounterId) return;
-
-    await createPrescriptionMutation.mutateAsync(
-      prescriptionForm,
-    );
-
-    setPrescriptionForm({
-      medication: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      route: "",
-      instructions: "",
-    });
-  };
-
-  const handleCreateFollowUp = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    if (!encounterId) return;
-
-    await createFollowUpMutation.mutateAsync({
-      description: followUpForm.description,
-      due_date:
-        followUpForm.due_date || null,
-      notes: followUpForm.notes,
-    });
-
-    setFollowUpForm({
-      description: "",
-      due_date: "",
-      notes: "",
-    });
-  };
-
-  const handleComplete = async () => {
-    if (!encounterId) return;
-
+  const handleNoShow = async () => {
     const confirmed = window.confirm(
-      "Complete this consultation? This should only be done after all clinical information has been recorded.",
+      "Mark this patient as a no-show?",
     );
 
     if (!confirmed) return;
 
-    await completeEncounterMutation.mutateAsync(
-      encounterId,
+    await noShowMutation.mutateAsync(
+      appointmentId,
     );
   };
 
-  const encounterNotFound =
-    !encounterLoading &&
-    encounterError;
+  const handleCancel = async () => {
+    const confirmed = window.confirm(
+      "Cancel this appointment?",
+    );
+
+    if (!confirmed) return;
+
+    await cancelMutation.mutateAsync(
+      appointmentId,
+    );
+  };
+
+  const canConfirm =
+    appointment.status === "SCHEDULED";
+
+  const canStart =
+    appointment.status === "CONFIRMED";
+
+  const canOpenClinical =
+    appointment.status === "IN_PROGRESS";
+
+  const canCancel =
+    appointment.status === "SCHEDULED" ||
+    appointment.status === "CONFIRMED";
+
+  const canNoShow =
+    appointment.status === "CONFIRMED";
 
   return (
-    <main className="space-y-6 p-6">
+    <main className="mx-auto max-w-5xl space-y-6">
+      {/* Back */}
+      <Link
+        href="/dashboard/doctor/appointments"
+        className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-gray-950"
+      >
+        <ArrowLeft size={16} />
+        Back to appointments
+      </Link>
+
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            href={`/dashboard/doctor/appointments/${appointmentId}`}
-            className="text-sm text-gray-500 hover:text-gray-950 hover:underline"
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+              <UserRound size={24} />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                Appointment
+              </p>
+
+              <h1 className="mt-1 text-2xl font-semibold text-gray-950">
+                {appointment.patient_name ||
+                  "Patient"}
+              </h1>
+
+              <p className="mt-1 font-mono text-xs text-gray-400">
+                {appointment.patient_uid}
+              </p>
+            </div>
+          </div>
+
+          <span
+            className={[
+              "w-fit rounded-full px-3 py-1.5",
+              "text-xs font-semibold",
+              "ring-1 ring-inset",
+              statusClasses(appointment.status),
+            ].join(" ")}
           >
-            ← Back to appointment
-          </Link>
-
-          <p className="mt-4 text-sm font-medium text-gray-500">
-            Doctor workspace
-          </p>
-
-          <h1 className="mt-1 text-2xl font-semibold text-gray-950">
-            Clinical Workspace
-          </h1>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Record the consultation and manage clinical
-            information.
-          </p>
+            {formatStatus(appointment.status)}
+          </span>
         </div>
+      </section>
 
-        <div className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium capitalize">
-          {appointment.status.replaceAll("_", " ")}
-        </div>
-      </div>
+      {/* Appointment information */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <SectionHeader
+          icon={<CalendarDays size={18} />}
+          title="Appointment details"
+        />
 
-      {/* Patient / appointment context */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-950">
-            Appointment context
-          </h2>
-        </div>
-
-        <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Detail
-            label="Patient"
-            value={appointment.patient}
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <InfoCard
+            icon={<CalendarDays size={17} />}
+            label="Scheduled for"
+            value={formatDateTime(
+              appointment.scheduled_at,
+            )}
           />
 
-          <Detail
+          <InfoCard
+            icon={<Clock3 size={17} />}
             label="Appointment type"
-            value={appointment.appointment_type}
-          />
-
-          <Detail
-            label="Reason"
             value={
-              appointment.reason || "Not provided"
+              appointment.appointment_type.replaceAll(
+                "_",
+                " ",
+              ) || "General consultation"
+            }
+          />
+        </div>
+
+        {appointment.reason && (
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+              Reason for visit
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-gray-700">
+              {appointment.reason}
+            </p>
+          </div>
+        )}
+
+        {appointment.notes && (
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+              Appointment notes
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-gray-700">
+              {appointment.notes}
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Lifecycle */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <SectionHeader
+          icon={<CheckCircle2 size={18} />}
+          title="Appointment workflow"
+        />
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-4">
+          <WorkflowStep
+            label="Scheduled"
+            active
+            completed={
+              appointment.status !== "SCHEDULED"
             }
           />
 
-          <Detail
-            label="Notes"
-            value={
-              appointment.notes || "No notes"
+          <WorkflowStep
+            label="Confirmed"
+            active={
+              appointment.status ===
+                "CONFIRMED" ||
+              appointment.status ===
+                "IN_PROGRESS" ||
+              appointment.status ===
+                "COMPLETED"
+            }
+            completed={
+              appointment.status ===
+                "IN_PROGRESS" ||
+              appointment.status ===
+                "COMPLETED"
+            }
+          />
+
+          <WorkflowStep
+            label="In progress"
+            active={
+              appointment.status ===
+                "IN_PROGRESS" ||
+              appointment.status ===
+                "COMPLETED"
+            }
+            completed={
+              appointment.status ===
+              "COMPLETED"
+            }
+          />
+
+          <WorkflowStep
+            label="Completed"
+            active={
+              appointment.status ===
+              "COMPLETED"
+            }
+            completed={
+              appointment.status ===
+              "COMPLETED"
             }
           />
         </div>
       </section>
 
-      {/* Encounter */}
-      {encounterLoading && (
-        <LoadingState message="Loading clinical encounter..." />
-      )}
+      {/* Actions */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <SectionHeader
+          icon={<FileText size={18} />}
+          title="Actions"
+        />
 
-      {encounterNotFound && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 p-5">
-            <h2 className="font-semibold text-gray-950">
-              Start clinical encounter
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Record the initial clinical assessment for
-              this appointment.
-            </p>
-          </div>
-
-          <form
-            onSubmit={handleCreateEncounter}
-            className="space-y-5 p-5"
-          >
-            <TextArea
-              label="Chief complaint"
-              value={encounterForm.chief_complaint}
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  chief_complaint: value,
-                }))
-              }
-              placeholder="Primary reason for consultation"
-            />
-
-            <TextArea
-              label="Symptoms"
-              value={encounterForm.symptoms}
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  symptoms: value,
-                }))
-              }
-              placeholder="Patient-reported symptoms"
-            />
-
-            <TextArea
-              label="Examination findings"
-              value={
-                encounterForm.examination_findings
-              }
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  examination_findings: value,
-                }))
-              }
-              placeholder="Clinical examination findings"
-            />
-
-            <TextArea
-              label="Assessment"
-              value={encounterForm.assessment}
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  assessment: value,
-                }))
-              }
-              placeholder="Clinical assessment"
-            />
-
-            <TextArea
-              label="Plan"
-              value={encounterForm.plan}
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  plan: value,
-                }))
-              }
-              placeholder="Treatment and care plan"
-            />
-
-            <TextArea
-              label="Notes"
-              value={encounterForm.notes}
-              onChange={(value) =>
-                setEncounterForm((current) => ({
-                  ...current,
-                  notes: value,
-                }))
-              }
-              placeholder="Additional clinical notes"
-            />
-
-            <button
-              type="submit"
-              disabled={isCreatingEncounter}
-              className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          {canConfirm && (
+            <ActionButton
+              onClick={handleConfirm}
+              disabled={isPending}
+              primary
             >
-              {isCreatingEncounter
-                ? "Creating encounter..."
-                : "Create encounter"}
-            </button>
-          </form>
-        </section>
-      )}
+              <CheckCircle2 size={17} />
+              {confirmMutation.isPending
+                ? "Confirming..."
+                : "Confirm appointment"}
+            </ActionButton>
+          )}
 
-      {encounter && (
-        <>
-          {/* Encounter details */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-950">
-                Clinical encounter
-              </h2>
-            </div>
+          {canStart && (
+            <ActionButton
+              onClick={handleStart}
+              disabled={isPending}
+              primary
+            >
+              <Clock3 size={17} />
+              {startMutation.isPending
+                ? "Starting..."
+                : "Start consultation"}
+            </ActionButton>
+          )}
 
-            <div className="grid gap-5 p-5 sm:grid-cols-2">
-              <Detail
-                label="Chief complaint"
-                value={
-                  encounter.chief_complaint ||
-                  "Not recorded"
-                }
-              />
+          {canOpenClinical && (
+            <Link
+              href={`/dashboard/doctor/appointments/${appointmentId}/clinical`}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
+            >
+              Open consultation
+              <ArrowRight size={17} />
+            </Link>
+          )}
 
-              <Detail
-                label="Symptoms"
-                value={
-                  encounter.symptoms ||
-                  "Not recorded"
-                }
-              />
+          {appointment.status ===
+            "COMPLETED" && (
+            <Link
+              href={`/dashboard/doctor/appointments/${appointmentId}/clinical`}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+            >
+              View consultation
+              <ArrowRight size={17} />
+            </Link>
+          )}
 
-              <Detail
-                label="Examination findings"
-                value={
-                  encounter.examination_findings ||
-                  "Not recorded"
-                }
-              />
+          {canNoShow && (
+            <ActionButton
+              onClick={handleNoShow}
+              disabled={isPending}
+            >
+              <AlertCircle size={17} />
+              {noShowMutation.isPending
+                ? "Updating..."
+                : "Mark no-show"}
+            </ActionButton>
+          )}
 
-              <Detail
-                label="Assessment"
-                value={
-                  encounter.assessment ||
-                  "Not recorded"
-                }
-              />
+          {canCancel && (
+            <ActionButton
+              onClick={handleCancel}
+              disabled={isPending}
+              danger
+            >
+              <XCircle size={17} />
+              {cancelMutation.isPending
+                ? "Cancelling..."
+                : "Cancel appointment"}
+            </ActionButton>
+          )}
+        </div>
+      </section>
 
-              <Detail
-                label="Plan"
-                value={
-                  encounter.plan ||
-                  "Not recorded"
-                }
-              />
-
-              <Detail
-                label="Notes"
-                value={
-                  encounter.notes ||
-                  "Not recorded"
-                }
-              />
-            </div>
-          </section>
-
-          {/* Diagnosis */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-950">
-                Diagnoses
-              </h2>
-            </div>
-
-            <div className="space-y-5 p-5">
-              {diagnosesLoading ? (
-                <p className="text-sm text-gray-500">
-                  Loading diagnoses...
-                </p>
-              ) : diagnoses.length > 0 ? (
-                <div className="space-y-2">
-                  {diagnoses.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-                    >
-                      <p className="font-medium text-gray-950">
-                        {item.diagnosis}
-                      </p>
-
-                      {item.diagnosis_type && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          {item.diagnosis_type}
-                        </p>
-                      )}
-
-                      {item.description && (
-                        <p className="mt-2 text-sm text-gray-600">
-                          {item.description}
-                        </p>
-                      )}
-
-                      {item.notes && (
-                        <p className="mt-2 text-sm text-gray-500">
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No diagnoses recorded.
-                </p>
-              )}
-
-              <form
-                onSubmit={handleCreateDiagnosis}
-                className="grid gap-4 border-t border-gray-200 pt-5 sm:grid-cols-2"
-              >
-                <Input
-                  label="Diagnosis"
-                  value={diagnosisForm.diagnosis}
-                  onChange={(value) =>
-                    setDiagnosisForm((current) => ({
-                      ...current,
-                      diagnosis: value,
-                    }))
-                  }
-                  required
-                />
-
-                <Input
-                  label="Diagnosis type"
-                  value={
-                    diagnosisForm.diagnosis_type
-                  }
-                  onChange={(value) =>
-                    setDiagnosisForm((current) => ({
-                      ...current,
-                      diagnosis_type: value,
-                    }))
-                  }
-                />
-
-                <TextArea
-                  label="Description"
-                  value={
-                    diagnosisForm.description
-                  }
-                  onChange={(value) =>
-                    setDiagnosisForm((current) => ({
-                      ...current,
-                      description: value,
-                    }))
-                  }
-                />
-
-                <TextArea
-                  label="Notes"
-                  value={diagnosisForm.notes}
-                  onChange={(value) =>
-                    setDiagnosisForm((current) => ({
-                      ...current,
-                      notes: value,
-                    }))
-                  }
-                />
-
-                <div className="sm:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={isAddingDiagnosis}
-                    className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                  >
-                    {isAddingDiagnosis
-                      ? "Adding..."
-                      : "Add diagnosis"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          {/* Prescriptions */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-950">
-                Prescriptions
-              </h2>
-            </div>
-
-            <div className="space-y-5 p-5">
-              {prescriptionsLoading ? (
-                <p className="text-sm text-gray-500">
-                  Loading prescriptions...
-                </p>
-              ) : prescriptions.length > 0 ? (
-                <div className="space-y-2">
-                  {prescriptions.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-                    >
-                      <p className="font-medium text-gray-950">
-                        {item.medication}
-                      </p>
-
-                      <p className="mt-1 text-sm text-gray-600">
-                        {item.dosage} · {item.frequency}
-                      </p>
-
-                      {item.duration && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          Duration: {item.duration}
-                        </p>
-                      )}
-
-                      {item.route && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          Route: {item.route}
-                        </p>
-                      )}
-
-                      {item.instructions && (
-                        <p className="mt-2 text-sm text-gray-600">
-                          {item.instructions}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No prescriptions recorded.
-                </p>
-              )}
-
-              <form
-                onSubmit={handleCreatePrescription}
-                className="grid gap-4 border-t border-gray-200 pt-5 sm:grid-cols-2"
-              >
-                <Input
-                  label="Medication"
-                  value={
-                    prescriptionForm.medication
-                  }
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        medication: value,
-                      }),
-                    )
-                  }
-                  required
-                />
-
-                <Input
-                  label="Dosage"
-                  value={prescriptionForm.dosage}
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        dosage: value,
-                      }),
-                    )
-                  }
-                  required
-                />
-
-                <Input
-                  label="Frequency"
-                  value={
-                    prescriptionForm.frequency
-                  }
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        frequency: value,
-                      }),
-                    )
-                  }
-                  required
-                />
-
-                <Input
-                  label="Duration"
-                  value={
-                    prescriptionForm.duration
-                  }
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        duration: value,
-                      }),
-                    )
-                  }
-                  required
-                />
-
-                <Input
-                  label="Route"
-                  value={prescriptionForm.route}
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        route: value,
-                      }),
-                    )
-                  }
-                />
-
-                <TextArea
-                  label="Instructions"
-                  value={
-                    prescriptionForm.instructions
-                  }
-                  onChange={(value) =>
-                    setPrescriptionForm(
-                      (current) => ({
-                        ...current,
-                        instructions: value,
-                      }),
-                    )
-                  }
-                />
-
-                <div className="sm:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={isAddingPrescription}
-                    className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                  >
-                    {isAddingPrescription
-                      ? "Adding..."
-                      : "Add prescription"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          {/* Follow-ups */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-950">
-                Follow-ups
-              </h2>
-            </div>
-
-            <div className="space-y-5 p-5">
-              {followUpsLoading ? (
-                <p className="text-sm text-gray-500">
-                  Loading follow-ups...
-                </p>
-              ) : followUps.length > 0 ? (
-                <div className="space-y-2">
-                  {followUps.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-                    >
-                      <p className="font-medium text-gray-950">
-                        {item.description}
-                      </p>
-
-                      {item.due_date && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          Due:{" "}
-                          {new Date(
-                            item.due_date,
-                          ).toLocaleDateString(
-                            "en-IN",
-                          )}
-                        </p>
-                      )}
-
-                      <p className="mt-1 text-xs uppercase tracking-wide text-gray-500">
-                        {item.status}
-                      </p>
-
-                      {item.notes && (
-                        <p className="mt-2 text-sm text-gray-600">
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No follow-ups recorded.
-                </p>
-              )}
-
-              <form
-                onSubmit={handleCreateFollowUp}
-                className="space-y-4 border-t border-gray-200 pt-5"
-              >
-                <TextArea
-                  label="Follow-up action"
-                  value={
-                    followUpForm.description
-                  }
-                  onChange={(value) =>
-                    setFollowUpForm(
-                      (current) => ({
-                        ...current,
-                        description: value,
-                      }),
-                    )
-                  }
-                  required
-                />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    label="Due date"
-                    type="date"
-                    value={
-                      followUpForm.due_date
-                    }
-                    onChange={(value) =>
-                      setFollowUpForm(
-                        (current) => ({
-                          ...current,
-                          due_date: value,
-                        }),
-                      )
-                    }
-                  />
-
-                  <TextArea
-                    label="Notes"
-                    value={followUpForm.notes}
-                    onChange={(value) =>
-                      setFollowUpForm(
-                        (current) => ({
-                          ...current,
-                          notes: value,
-                        }),
-                      )
-                    }
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isAddingFollowUp}
-                  className="rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  {isAddingFollowUp
-                    ? "Adding..."
-                    : "Add follow-up"}
-                </button>
-              </form>
-            </div>
-          </section>
-
-          {/* Complete */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-semibold text-gray-950">
-                  Complete consultation
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Complete the clinical encounter after
-                  all required information has been recorded.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleComplete}
-                disabled={isCompleting}
-                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isCompleting
-                  ? "Completing..."
-                  : "Complete consultation"}
-              </button>
-            </div>
-          </section>
-        </>
+      {/* Terminal status */}
+      {(appointment.status === "CANCELLED" ||
+        appointment.status === "NO_SHOW") && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          This appointment is closed and no further
+          lifecycle actions are available.
+        </div>
       )}
     </main>
   );
 }
 
-function Detail({
+function SectionHeader({
+  icon,
+  title,
+}: {
+  icon: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+        {icon}
+      </div>
+
+      <h2 className="font-semibold text-gray-950">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function InfoCard({
+  icon,
   label,
   value,
 }: {
+  icon: React.ReactNode;
   label: string;
   value: string;
 }) {
   return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <div className="flex items-center gap-2 text-gray-500">
+        {icon}
 
-      <p className="mt-1 text-sm text-gray-900">
+        <span className="text-xs font-medium uppercase tracking-wide">
+          {label}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-gray-900">
         {value}
       </p>
     </div>
   );
 }
 
-function Input({
+function WorkflowStep({
   label,
-  value,
-  onChange,
-  type = "text",
-  required = false,
+  active,
+  completed,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  required?: boolean;
+  active: boolean;
+  completed: boolean;
 }) {
   return (
-    <label className="space-y-1.5">
-      <span className="text-sm font-medium text-gray-700">
-        {label}
-      </span>
+    <div
+      className={[
+        "rounded-xl border p-4",
+        active
+          ? "border-gray-300 bg-gray-50"
+          : "border-gray-200 bg-white",
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-2">
+        <div
+          className={[
+            "h-2.5 w-2.5 rounded-full",
+            completed || active
+              ? "bg-gray-900"
+              : "bg-gray-300",
+          ].join(" ")}
+        />
 
-      <input
-        type={type}
-        value={value}
-        required={required}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-950"
-      />
-    </label>
+        <p
+          className={[
+            "text-sm font-semibold",
+            active
+              ? "text-gray-900"
+              : "text-gray-400",
+          ].join(" ")}
+        >
+          {label}
+        </p>
+      </div>
+    </div>
   );
 }
 
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required = false,
+function ActionButton({
+  children,
+  onClick,
+  disabled,
+  primary = false,
+  danger = false,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  primary?: boolean;
+  danger?: boolean;
 }) {
   return (
-    <label className="space-y-1.5">
-      <span className="text-sm font-medium text-gray-700">
-        {label}
-      </span>
-
-      <textarea
-        value={value}
-        placeholder={placeholder}
-        required={required}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        rows={3}
-        className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-950"
-      />
-    </label>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5",
+        "text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
+        primary
+          ? "bg-gray-950 text-white hover:bg-gray-800"
+          : danger
+            ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
+            : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }

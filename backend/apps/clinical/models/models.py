@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -344,3 +345,47 @@ class FollowUpAction(BaseModel):
             raise ValidationError(
                 "Follow-up action can only be added during an active consultation."
             )
+
+class ClinicalAttachment(BaseModel):
+    class Category(models.TextChoices):
+        LAB_REPORT = "LAB_REPORT", "Lab report"
+        IMAGING = "IMAGING", "Imaging"
+        PRESCRIPTION = "PRESCRIPTION", "Prescription"
+        REFERRAL = "REFERRAL", "Referral letter"
+        DISCHARGE_SUMMARY = "DISCHARGE_SUMMARY", "Discharge summary"
+        OTHER = "OTHER", "Other"
+
+    encounter = models.ForeignKey(
+        ClinicalEncounter,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    title = models.CharField(max_length=150)
+    description = models.TextField(blank=True)
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.OTHER,
+    )
+    file = models.FileField(upload_to="clinical_attachments/%Y/%m/")
+    original_filename = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    size_bytes = models.PositiveBigIntegerField()
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="clinical_attachments_uploaded",
+    )
+
+    class Meta:
+        db_table = "clinical_attachments"
+        ordering = ["-created_at"]
+
+    def clean(self):
+        super().clean()
+
+        if self.file and self.file.size > 10 * 1024 * 1024:
+            raise ValidationError({"file": "File must be 10 MB or smaller."})
+
+    def __str__(self):
+        return f"{self.title} - {self.encounter_id}"

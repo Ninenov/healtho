@@ -29,6 +29,16 @@ from apps.clinical.api.views.encounter_completion import (
 )
 from apps.clinical.api.views.audit import ClinicalAuditListView
 
+from apps.clinical.api.views.patient_history import (
+    PatientOwnClinicalHistoryView,
+)
+
+from apps.clinical.api.views.attachments import (
+    ClinicalAttachmentDownloadView,
+    ClinicalAttachmentListCreateView,
+)
+
+
 urlpatterns = [
     path(
         "allergies/",
@@ -99,5 +109,20 @@ urlpatterns = [
         "audit/",
         ClinicalAuditListView.as_view(),
         name="clinical-audit",
+    ),
+    path(
+        "my-history/",
+        PatientOwnClinicalHistoryView.as_view(),
+        name="patient-own-clinical-history",
+    ),
+    path(
+        "encounters/<uuid:encounter_id>/attachments/",
+        ClinicalAttachmentListCreateView.as_view(),
+        name="clinical-attachment-list-create",
+    ),
+    path(
+        "attachments/<uuid:attachment_id>/download/",
+        ClinicalAttachmentDownloadView.as_view(),
+        name="clinical-attachment-download",
     ),
 ]

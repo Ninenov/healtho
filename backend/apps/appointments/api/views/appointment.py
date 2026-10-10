@@ -65,27 +65,36 @@ class AppointmentListCreateView(APIView):
 class AppointmentDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    
     def get_object(self, request, appointment_id):
+        # Patients can access only their own appointments.
         patient = get_patient_by_user(request.user)
 
-        if patient is None:
+        if patient is not None:
+            return (
+                Appointment.objects
+                .filter(id=appointment_id, patient=patient)
+                .select_related("doctor", "doctor__user", "patient", "patient__user")
+                .first()
+            )
+
+        # Doctors can access only appointments assigned to them.
+        try:
+            doctor = request.user.doctor_profile
+        except AttributeError:
             return None
 
         return (
             Appointment.objects
-            .filter(
-                id=appointment_id,
-                patient=patient,
-            )
-            .select_related("doctor", "doctor__user")
+            .filter(id=appointment_id, doctor=doctor)
+            .select_related("doctor", "doctor__user", "patient", "patient__user")
             .first()
-        )
+        )   
 
+
+    
     def get(self, request, appointment_id):
-        appointment = self.get_object(
-            request,
-            appointment_id,
-        )
+        appointment = self.get_object(request, appointment_id)
 
         if appointment is None:
             return Response(
@@ -94,8 +103,8 @@ class AppointmentDetailView(APIView):
             )
 
         serializer = AppointmentSerializer(appointment)
-
         return Response(serializer.data)
+
 
     def patch(self, request, appointment_id):
         appointment = self.get_object(

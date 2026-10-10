@@ -1,5 +1,9 @@
-from .patient import PatientSerializer
+from .patient import (
+    PatientSerializer,
+    PatientAddressSerializer,
+)
 
 __all__ = [
     "PatientSerializer",
+    "PatientAddressSerializer",
 ]

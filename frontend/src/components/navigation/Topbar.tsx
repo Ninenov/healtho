@@ -25,12 +25,12 @@ export function Topbar({
       .toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6">
-      {/* Mobile menu */}
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+      {/* Mobile */}
       <button
         type="button"
         onClick={onMenuClick}
-        className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-950 lg:hidden"
+        className="rounded-xl p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 lg:hidden"
         aria-label="Open navigation"
       >
         <Menu size={21} />
@@ -38,40 +38,38 @@ export function Topbar({
 
       {/* Desktop title */}
       <div className="hidden lg:block">
-        <p className="text-sm font-medium text-gray-900">
+        <p className="text-sm font-semibold text-slate-950">
           HealthOS
         </p>
-        <p className="text-xs text-gray-500">
+
+        <p className="text-xs text-slate-500">
           Healthcare workspace
         </p>
       </div>
 
-      {/* Right side */}
-      <div className="ml-auto flex items-center gap-2 sm:gap-4">
+      {/* Right */}
+      <div className="ml-auto flex items-center gap-3 sm:gap-4">
         <button
           type="button"
-          className="relative rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-950"
+          className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
           aria-label="Notifications"
         >
           <Bell size={20} strokeWidth={1.9} />
-
-          {/* Keep hidden until unread count is connected */}
-          <span className="absolute right-1.5 top-1.5 hidden h-2 w-2 rounded-full bg-red-500" />
         </button>
 
-        <div className="hidden h-7 w-px bg-gray-200 sm:block" />
+        <div className="hidden h-7 w-px bg-slate-200 sm:block" />
 
         <div className="hidden text-right sm:block">
-          <p className="text-sm font-medium leading-5 text-gray-900">
+          <p className="text-sm font-semibold leading-5 text-slate-900">
             {name}
           </p>
 
-          <p className="text-xs uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             {user?.role}
           </p>
         </div>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-950 text-xs font-semibold text-white">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">
           {initials}
         </div>
       </div>

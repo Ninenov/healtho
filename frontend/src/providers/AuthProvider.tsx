@@ -77,23 +77,21 @@ export function AuthProvider({
     [],
   );
 
-  const logoutUser = useCallback(
-    async () => {
-      const refreshToken =
-        getRefreshToken();
+  const logoutUser = useCallback(async () => {
+    const refreshToken = getRefreshToken();
 
-      try {
-        if (refreshToken) {
-          await logout(refreshToken);
-        }
-      } finally {
-        clearTokens();
-        setUser(null);
-        router.replace("/login");
+    try {
+      if (refreshToken) {
+        await logout(refreshToken);
       }
-    },
-    [router],
-  );
+    } catch (error) {
+      console.error("Backend logout failed:", error);
+    } finally {
+      clearTokens();
+      setUser(null);
+      router.replace("/login");
+    }
+  }, [router]);
 
   /*
    * Restore an existing session.

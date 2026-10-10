@@ -1,7 +1,5 @@
 "use client";
 
-
-import type { DoctorAvailability } from "./api";
 import {
   useMutation,
   useQuery,
@@ -11,17 +9,71 @@ import {
 import {
   createDoctorAvailability,
   deleteDoctorAvailability,
+  getDoctor,
   getDoctorAvailability,
+  getDoctorPatientAvailability,
+  getDoctors,
   updateDoctorAvailability,
   type CreateDoctorAvailabilityRequest,
+  type DoctorAvailability,
 } from "./api";
 
 export const doctorKeys = {
   all: ["doctors"] as const,
+
+  list: () =>
+    [...doctorKeys.all, "list"] as const,
+
+  detail: (id: string) =>
+    [...doctorKeys.all, "detail", id] as const,
+
   availability: () =>
     [...doctorKeys.all, "availability"] as const,
+
+  patientAvailability: (doctorId: string) =>
+    [
+      ...doctorKeys.all,
+      "patient-availability",
+      doctorId,
+    ] as const,
 };
 
+export function useDoctors() {
+  return useQuery({
+    queryKey: doctorKeys.list(),
+    queryFn: getDoctors,
+    staleTime: 60_000,
+  });
+}
+
+export function useDoctor(id: string) {
+  return useQuery({
+    queryKey: doctorKeys.detail(id),
+    queryFn: () => getDoctor(id),
+    enabled: Boolean(id),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Used by patients while booking an appointment.
+ */
+export function useDoctorPatientAvailability(
+  doctorId: string,
+) {
+  return useQuery({
+    queryKey:
+      doctorKeys.patientAvailability(doctorId),
+    queryFn: () =>
+      getDoctorPatientAvailability(doctorId),
+    enabled: Boolean(doctorId),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Used by doctors to manage their own availability.
+ */
 export function useDoctorAvailability() {
   return useQuery({
     queryKey: doctorKeys.availability(),
@@ -34,8 +86,9 @@ export function useCreateDoctorAvailability() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateDoctorAvailabilityRequest) =>
-      createDoctorAvailability(data),
+    mutationFn: (
+      data: CreateDoctorAvailabilityRequest,
+    ) => createDoctorAvailability(data),
 
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -45,7 +98,9 @@ export function useCreateDoctorAvailability() {
   });
 }
 
-export function useUpdateDoctorAvailability(id: string) {
+export function useUpdateDoctorAvailability(
+  id: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -56,7 +111,11 @@ export function useUpdateDoctorAvailability(id: string) {
     onSuccess: (availability) => {
       queryClient.setQueryData(
         doctorKeys.availability(),
-        (current: DoctorAvailability[] | undefined) =>
+        (
+          current:
+            | DoctorAvailability[]
+            | undefined,
+        ) =>
           current?.map((item) =>
             item.id === availability.id
               ? availability
@@ -77,8 +136,14 @@ export function useDeleteDoctorAvailability() {
     onSuccess: (_, id) => {
       queryClient.setQueryData(
         doctorKeys.availability(),
-        (current: DoctorAvailability[] | undefined) =>
-          current?.filter((item) => item.id !== id),
+        (
+          current:
+            | DoctorAvailability[]
+            | undefined,
+        ) =>
+          current?.filter(
+            (item) => item.id !== id,
+          ),
       );
     },
   });

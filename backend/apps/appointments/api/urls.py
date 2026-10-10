@@ -16,7 +16,7 @@ from apps.appointments.api.views.doctor import (
 )
 
 urlpatterns = [
-    path(
+        path(
         "",
         AppointmentListCreateView.as_view(),
         name="appointment-list-create",
@@ -31,6 +31,7 @@ urlpatterns = [
         AppointmentCancelView.as_view(),
         name="appointment-cancel",
     ),
+
     path(
         "<uuid:appointment_id>/confirm/",
         AppointmentConfirmView.as_view(),

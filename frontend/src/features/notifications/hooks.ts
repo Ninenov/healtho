@@ -9,6 +9,7 @@ import {
 import {
   getNotifications,
   markNotificationRead,
+  type Notification,
 } from "./api";
 
 export const notificationKeys = {
@@ -20,6 +21,7 @@ export function useNotifications() {
   return useQuery({
     queryKey: notificationKeys.list(),
     queryFn: getNotifications,
+    staleTime: 30_000,
   });
 }
 
@@ -30,10 +32,25 @@ export function useMarkNotificationRead() {
     mutationFn: (notificationId: number) =>
       markNotificationRead(notificationId),
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.list(),
-      });
+    onSuccess: (updatedNotification) => {
+      queryClient.setQueryData<Notification[]>(
+        notificationKeys.list(),
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return current.map((notification) =>
+            notification.id === updatedNotification.id
+              ? {
+                  ...notification,
+                  status: updatedNotification.status,
+                  read_at: updatedNotification.read_at,
+                }
+              : notification,
+          );
+        },
+      );
     },
   });
 }

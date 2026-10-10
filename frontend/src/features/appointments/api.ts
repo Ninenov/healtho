@@ -3,6 +3,8 @@ import { apiClient } from "@/services/api/client";
 export interface Appointment {
   id: string;
   patient: string;
+  patient_uid: string;
+  patient_name: string;
   doctor: string;
   appointment_type: string;
   scheduled_at: string;
@@ -72,9 +74,7 @@ export async function cancelAppointment(
   return response.data;
 }
 
-export async function getDoctorAppointments(): Promise<
-  Appointment[]
-> {
+export async function getDoctorAppointments(): Promise<Appointment[]> {
   const response = await apiClient.get<Appointment[]>(
     "/appointments/doctor/",
   );

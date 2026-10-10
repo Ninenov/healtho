@@ -7,6 +7,11 @@ from apps.common.models import BaseModel
 
 
 class Doctor(BaseModel):
+    class VerificationStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        VERIFIED = "VERIFIED", "Verified"
+        REJECTED = "REJECTED", "Rejected"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -28,6 +33,12 @@ class Doctor(BaseModel):
         unique=True,
         blank=True,
         null=True,
+    )
+
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.PENDING,
     )
 
     def clean(self):

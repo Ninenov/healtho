@@ -13,7 +13,7 @@ from apps.notifications.services import (
 from apps.notifications.tasks import (
     process_notification_delivery_task,
 )
-
+from apps.appointments.events.status import AppointmentNoShow
 
 def handle_follow_up_created(event: FollowUpCreated) -> None:
     """
@@ -184,3 +184,31 @@ def handle_appointment_reminder_due(
         process_notification_delivery_task.delay(
             delivery.id,
         )
+
+
+def handle_appointment_no_show(
+    event: AppointmentNoShow,
+) -> None:
+    """Notify the patient when an appointment is marked no-show."""
+
+    create_notification(
+        recipient=event.patient_user,
+        notification_type=Notification.NotificationType.APPOINTMENT,
+        title="Appointment Marked No-Show",
+        message=(
+            "Your appointment has been marked as missed. "
+            "Please contact the healthcare provider if you need "
+            "to reschedule."
+        ),
+        target_type="Appointment",
+        target_id=event.appointment_id,
+        metadata={
+            "doctor_id": str(event.doctor_id),
+            "scheduled_at": (
+                event.scheduled_at.isoformat()
+                if event.scheduled_at else None
+            ),
+            "appointment_type": event.appointment_type,
+            "appointment_status": "NO_SHOW",
+        },
+    )

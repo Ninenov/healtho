@@ -1,11 +1,23 @@
 import { apiClient } from "@/services/api/client";
 
+export interface Doctor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  specialization: string;
+  qualification: string;
+  license_number: string | null;
+}
+
 export interface DoctorAvailability {
   id: string;
+  doctor: string;
   weekday: number;
   start_time: string;
   end_time: string;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateDoctorAvailabilityRequest {
@@ -15,12 +27,39 @@ export interface CreateDoctorAvailabilityRequest {
   is_active?: boolean;
 }
 
+export async function getDoctors(): Promise<Doctor[]> {
+  const response = await apiClient.get<Doctor[]>("/doctors/");
+  return response.data;
+}
+
+export async function getDoctor(
+  doctorId: string,
+): Promise<Doctor> {
+  const response = await apiClient.get<Doctor>(
+    `/doctors/${doctorId}/`,
+  );
+
+  return response.data;
+}
+
+export async function getDoctorPatientAvailability(
+  doctorId: string,
+): Promise<DoctorAvailability[]> {
+  const response =
+    await apiClient.get<DoctorAvailability[]>(
+      `/doctors/${doctorId}/availability/`,
+    );
+
+  return response.data;
+}
+
 export async function getDoctorAvailability(): Promise<
   DoctorAvailability[]
 > {
-  const response = await apiClient.get<DoctorAvailability[]>(
-    "/doctors/availability/",
-  );
+  const response =
+    await apiClient.get<DoctorAvailability[]>(
+      "/doctors/availability/",
+    );
 
   return response.data;
 }

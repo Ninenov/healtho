@@ -7,20 +7,30 @@ from apps.accounts.api.serializers import (
     RegisterSerializer,
     UserSerializer,
 )
-from apps.patients.services.patient import create_patient_profile
 
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = RegisterSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
 
         user = serializer.save()
-        create_patient_profile(user)
+
+        response = UserSerializer(user).data
+
+        if hasattr(user, "doctor_profile"):
+            response["verification_status"] = (
+                user.doctor_profile.verification_status
+            )
 
         return Response(
-            UserSerializer(user).data,
+            response,
             status=status.HTTP_201_CREATED,
         )

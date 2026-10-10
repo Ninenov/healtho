@@ -35,6 +35,29 @@ class MedicalRecord(BaseModel):
 
     record_date = models.DateField()
 
+    
+    document = models.FileField(
+        upload_to="medical_records/%Y/%m/",
+        blank=True,
+        null=True,
+    )
+
+    original_filename = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    mime_type = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    file_size = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+    )
+
+
     class Meta:
         db_table = "medical_records"
         ordering = ["-record_date", "-created_at"]

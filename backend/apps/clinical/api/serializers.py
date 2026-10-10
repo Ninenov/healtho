@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.clinical.models.models import (
     Allergy,
+    ClinicalAttachment,
     ClinicalEncounter,
     Diagnosis,
     FollowUpAction,
@@ -183,3 +184,34 @@ class ClinicalEncounterContextSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+from apps.clinical.models.models import ClinicalAttachment
+
+
+class ClinicalAttachmentSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(
+        source="get_category_display",
+        read_only=True,
+    )
+    uploaded_by = serializers.CharField(
+        source="uploaded_by_id",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClinicalAttachment
+        fields = (
+            "id",
+            "title",
+            "description",
+            "category",
+            "category_display",
+            "original_filename",
+            "content_type",
+            "size_bytes",
+            "uploaded_by",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields

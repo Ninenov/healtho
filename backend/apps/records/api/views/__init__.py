@@ -3,6 +3,10 @@ from .record import (
     MedicalRecordDetailAPIView,
 )
 
+from .document import (
+    MedicalRecordDocumentDownloadAPIView,
+)
+
 __all__ = [
     "MedicalRecordListCreateAPIView",
     "MedicalRecordDetailAPIView",

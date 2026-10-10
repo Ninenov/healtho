@@ -5,11 +5,20 @@ from rest_framework.permissions import IsAuthenticated
 from apps.records.api.serializers import MedicalRecordSerializer
 from apps.records.models import MedicalRecord
 from apps.patients.selectors.patient import get_patient_by_user
-
+from rest_framework.parsers import (
+    FormParser,
+    JSONParser,
+    MultiPartParser,
+)
 
 class MedicalRecordListCreateAPIView(ListCreateAPIView):
     serializer_class = MedicalRecordSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [
+        MultiPartParser,
+        FormParser,
+        JSONParser,
+    ]
 
     def get_queryset(self):
         patient = get_patient_by_user(self.request.user)
@@ -35,6 +44,11 @@ class MedicalRecordListCreateAPIView(ListCreateAPIView):
 class MedicalRecordDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = MedicalRecordSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [
+        MultiPartParser,
+        FormParser,
+        JSONParser,
+    ]
 
     def get_queryset(self):
         patient = get_patient_by_user(self.request.user)
